@@ -1,0 +1,136 @@
+// --- Identidad y Estructura Familiar ---
+
+Table users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  full_name varchar
+  email varchar [unique, not null]
+  password_hash text [not null]
+  photo_url text
+  created_at timestamp [default: `now()`]
+}
+
+Table family_groups {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar [not null]
+}
+
+Table family_memberships {
+  id serial [pk]
+  user_id uuid [ref: > users.id]
+  family_group_id uuid [ref: > family_groups.id]
+  is_admin boolean [default: false]
+  relationship varchar [note: 'Padre, Hijo, etc.']
+  
+  Indexes {
+    (user_id, family_group_id) [unique]
+  }
+}
+
+// --- AnimalCare (Mascotas de la Familia) ---
+
+Table pets {
+  id uuid [pk, default: `gen_random_uuid()`]
+  family_group_id uuid [ref: > family_groups.id]
+  name varchar [not null]
+  species varchar [note: 'Perro, Gato, Ave, etc.']
+  breed varchar
+  birth_date date
+  photo_url text
+  chip_number varchar
+  gender varchar
+}
+
+// --- Seguros Médicos (Soporta Humanos y Mascotas) ---
+
+Table insurers {
+  id uuid [pk]
+  name varchar [not null]
+  type varchar [note: 'Salud Humana, Veterinaria']
+}
+
+Table user_pet_insurances {
+  id uuid [pk]
+  user_id uuid [ref: > users.id, note: 'Null si es seguro de mascota']
+  pet_id uuid [ref: > pets.id, note: 'Null si es seguro de humano']
+  insurer_id uuid [ref: > insurers.id]
+  policy_number varchar
+  is_active boolean [default: true]
+}
+
+// --- Entidades de Salud ---
+
+Table doctors {
+  id uuid [pk]
+  name varchar [not null]
+  specialty varchar
+  is_vet boolean [default: false]
+}
+
+Table medical_centers {
+  id uuid [pk]
+  name varchar [not null]
+  type varchar [note: 'Hospital, Clínica, Veterinaria, Consultorio']
+   address varchar
+  phone varchar
+  latitude float
+  longitude float
+  isActive bool
+}
+
+// --- El Corazón: Historia Clínica Heredada ---
+
+Table medical_incidents {
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_user_id uuid [ref: > users.id, note: 'Paciente Humano']
+  pet_id uuid [ref: > pets.id, note: 'Paciente Mascota']
+  doctor_id uuid [ref: > doctors.id]
+  center_id uuid [ref: > medical_centers.id]
+  incident_date timestamp
+  diagnosis text
+  symptoms text
+  emergency_level int
+}
+
+Table medical_exams {
+  id uuid [pk]
+  incident_id uuid [ref: > medical_incidents.id]
+  exam_name varchar
+  status varchar [note: 'Pendiente, Realizado']
+  results_summary text
+}
+
+Table medications {
+  id uuid [pk]
+  incident_id uuid [ref: > medical_incidents.id]
+  drug_name varchar
+  posology text
+  start_date date
+  end_date date
+}
+
+// --- Evidencias y Seguimiento ---
+
+Table attachments {
+  id uuid [pk]
+  incident_id uuid [ref: > medical_incidents.id]
+  exam_id uuid [ref: > medical_exams.id]
+  file_url text
+  file_type varchar
+}
+
+Table daily_compliance {
+  id uuid [pk]
+  incident_id uuid [ref: > medical_incidents.id]
+  check_date date
+  is_completed boolean
+}
+
+// --- Perfil de Salud Rápido ---
+
+Table health_profiles {
+  user_id uuid [pk, ref: - users.id]
+  pet_id uuid [pk, ref: - pets.id]
+  blood_type varchar(10)
+  allergies_summary text
+  chronic_conditions text
+}

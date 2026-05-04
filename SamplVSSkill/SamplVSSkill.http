@@ -1,0 +1,6 @@
+@SamplVSSkill_HostAddress = http://localhost:5043
+
+GET {{SamplVSSkill_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

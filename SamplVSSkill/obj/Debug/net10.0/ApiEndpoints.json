@@ -1,0 +1,334 @@
+[
+  {
+    "ContainingType": "SamplVSSkill.Features.Doctors.CreateDoctor.CreateDoctorEndpoint",
+    "Method": "Handle",
+    "RelativePath": "api/doctors",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "command",
+        "Type": "SamplVSSkill.Features.Doctors.CreateDoctor.CreateDoctorCommand",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SamplVSSkill.Features.Doctors.CreateDoctor.CreateDoctorResponse",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 201
+      },
+      {
+        "Type": "Microsoft.AspNetCore.Http.HttpValidationProblemDetails",
+        "MediaTypes": [
+          "application/problem\u002Bjson"
+        ],
+        "StatusCode": 400
+      }
+    ],
+    "Tags": [
+      "Doctors"
+    ],
+    "EndpointName": "CreateDoctor"
+  },
+  {
+    "ContainingType": "SamplVSSkill.Features.Doctors.ListDoctors.ListDoctorsEndpoint",
+    "Method": "Handle",
+    "RelativePath": "api/doctors",
+    "HttpMethod": "GET",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[SamplVSSkill.Features.Doctors.ListDoctors.ListDoctorsResponse, SamplVSSkill, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      }
+    ],
+    "Tags": [
+      "Doctors"
+    ],
+    "EndpointName": "ListDoctors"
+  },
+  {
+    "ContainingType": "SamplVSSkill.Features.Doctors.GetDoctor.GetDoctorEndpoint",
+    "Method": "Handle",
+    "RelativePath": "api/doctors/{id:guid}",
+    "HttpMethod": "GET",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SamplVSSkill.Features.Doctors.GetDoctor.GetDoctorResponse",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 404
+      }
+    ],
+    "Tags": [
+      "Doctors"
+    ],
+    "EndpointName": "GetDoctor"
+  },
+  {
+    "ContainingType": "SamplVSSkill.Features.Doctors.UpdateDoctor.UpdateDoctorEndpoint",
+    "Method": "Handle",
+    "RelativePath": "api/doctors/{id:guid}",
+    "HttpMethod": "PUT",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "command",
+        "Type": "SamplVSSkill.Features.Doctors.UpdateDoctor.UpdateDoctorCommand",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SamplVSSkill.Features.Doctors.UpdateDoctor.UpdateDoctorResponse",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 404
+      },
+      {
+        "Type": "Microsoft.AspNetCore.Http.HttpValidationProblemDetails",
+        "MediaTypes": [
+          "application/problem\u002Bjson"
+        ],
+        "StatusCode": 400
+      }
+    ],
+    "Tags": [
+      "Doctors"
+    ],
+    "EndpointName": "UpdateDoctor"
+  },
+  {
+    "ContainingType": "SamplVSSkill.Features.Doctors.DeleteDoctor.DeleteDoctorEndpoint",
+    "Method": "Handle",
+    "RelativePath": "api/doctors/{id:guid}",
+    "HttpMethod": "DELETE",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 204
+      },
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 404
+      }
+    ],
+    "Tags": [
+      "Doctors"
+    ],
+    "EndpointName": "DeleteDoctor"
+  },
+  {
+    "ContainingType": "SamplVSSkill.Features.MedicalCenters.CreateMedicalCenter.CreateMedicalCenterEndpoint",
+    "Method": "Handle",
+    "RelativePath": "api/medical-centers",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "command",
+        "Type": "SamplVSSkill.Features.MedicalCenters.CreateMedicalCenter.CreateMedicalCenterCommand",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SamplVSSkill.Features.MedicalCenters.CreateMedicalCenter.CreateMedicalCenterResponse",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 201
+      },
+      {
+        "Type": "Microsoft.AspNetCore.Http.HttpValidationProblemDetails",
+        "MediaTypes": [
+          "application/problem\u002Bjson"
+        ],
+        "StatusCode": 400
+      }
+    ],
+    "Tags": [
+      "MedicalCenters"
+    ],
+    "EndpointName": "CreateMedicalCenter"
+  },
+  {
+    "ContainingType": "SamplVSSkill.Features.MedicalCenters.ListMedicalCenters.ListMedicalCentersEndpoint",
+    "Method": "Handle",
+    "RelativePath": "api/medical-centers",
+    "HttpMethod": "GET",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[SamplVSSkill.Features.MedicalCenters.ListMedicalCenters.ListMedicalCentersResponse, SamplVSSkill, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      }
+    ],
+    "Tags": [
+      "MedicalCenters"
+    ],
+    "EndpointName": "ListMedicalCenters"
+  },
+  {
+    "ContainingType": "SamplVSSkill.Features.MedicalCenters.GetMedicalCenter.GetMedicalCenterEndpoint",
+    "Method": "Handle",
+    "RelativePath": "api/medical-centers/{id:guid}",
+    "HttpMethod": "GET",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SamplVSSkill.Features.MedicalCenters.GetMedicalCenter.GetMedicalCenterResponse",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 404
+      }
+    ],
+    "Tags": [
+      "MedicalCenters"
+    ],
+    "EndpointName": "GetMedicalCenter"
+  },
+  {
+    "ContainingType": "SamplVSSkill.Features.MedicalCenters.UpdateMedicalCenter.UpdateMedicalCenterEndpoint",
+    "Method": "Handle",
+    "RelativePath": "api/medical-centers/{id:guid}",
+    "HttpMethod": "PUT",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "command",
+        "Type": "SamplVSSkill.Features.MedicalCenters.UpdateMedicalCenter.UpdateMedicalCenterCommand",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "SamplVSSkill.Features.MedicalCenters.UpdateMedicalCenter.UpdateMedicalCenterResponse",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 404
+      },
+      {
+        "Type": "Microsoft.AspNetCore.Http.HttpValidationProblemDetails",
+        "MediaTypes": [
+          "application/problem\u002Bjson"
+        ],
+        "StatusCode": 400
+      }
+    ],
+    "Tags": [
+      "MedicalCenters"
+    ],
+    "EndpointName": "UpdateMedicalCenter"
+  },
+  {
+    "ContainingType": "SamplVSSkill.Features.MedicalCenters.DeleteMedicalCenter.DeleteMedicalCenterEndpoint",
+    "Method": "Handle",
+    "RelativePath": "api/medical-centers/{id:guid}",
+    "HttpMethod": "DELETE",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 204
+      },
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 404
+      }
+    ],
+    "Tags": [
+      "MedicalCenters"
+    ],
+    "EndpointName": "DeleteMedicalCenter"
+  }
+]
