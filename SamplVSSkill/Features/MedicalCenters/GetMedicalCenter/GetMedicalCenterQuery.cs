@@ -13,7 +13,9 @@ public record GetMedicalCenterResponse(
     string? Phone,
     bool IsActive,
     double? Latitude,
-    double? Longitude);
+    double? Longitude,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
 // ── Query Handler (Dapper) ──────────────────────────────────────
 public class GetMedicalCenterQueryHandler
@@ -28,14 +30,16 @@ public class GetMedicalCenterQueryHandler
         using var connection = _connectionFactory.CreateConnection();
 
         const string sql = """
-            SELECT id       AS Id,
-                   name     AS Name,
-                   type     AS Type,
-                   address  AS Address,
-                   phone    AS Phone,
-                   is_active AS IsActive,
-                   latitude  AS Latitude,
-                   longitude AS Longitude
+            SELECT id         AS Id,
+                   name       AS Name,
+                   type       AS Type,
+                   address    AS Address,
+                   phone      AS Phone,
+                   is_active  AS IsActive,
+                   latitude   AS Latitude,
+                   longitude  AS Longitude,
+                   created_at AS CreatedAt,
+                   updated_at AS UpdatedAt
             FROM medical_centers
             WHERE id = @Id
             """;

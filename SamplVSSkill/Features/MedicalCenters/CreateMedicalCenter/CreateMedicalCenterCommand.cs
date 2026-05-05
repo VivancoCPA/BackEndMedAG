@@ -22,7 +22,9 @@ public record CreateMedicalCenterResponse(
     string? Phone,
     bool IsActive,
     double? Latitude,
-    double? Longitude);
+    double? Longitude,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
 // ── Command Handler (EF Core) ───────────────────────────────────
 public class CreateMedicalCenterCommandHandler
@@ -31,18 +33,23 @@ public class CreateMedicalCenterCommandHandler
 
     public CreateMedicalCenterCommandHandler(AppDbContext db) => _db = db;
 
-    public async Task<CreateMedicalCenterResponse> HandleAsync(CreateMedicalCenterCommand command, CancellationToken ct)
+    public async Task<CreateMedicalCenterResponse> HandleAsync(
+        CreateMedicalCenterCommand command, CancellationToken ct)
     {
+        var now = DateTime.UtcNow;
+
         var center = new MedicalCenter
         {
-            Id = Guid.CreateVersion7(),
-            Name = command.Name,
-            Type = command.Type,
-            Address = command.Address,
-            Phone = command.Phone,
-            IsActive = command.IsActive,
-            Latitude = command.Latitude,
-            Longitude = command.Longitude
+            Id        = Guid.CreateVersion7(),
+            Name      = command.Name,
+            Type      = command.Type,
+            Address   = command.Address,
+            Phone     = command.Phone,
+            IsActive  = command.IsActive,
+            Latitude  = command.Latitude,
+            Longitude = command.Longitude,
+            CreatedAt = now,   // set once at creation
+            UpdatedAt = now    // AppDbContext.SaveChangesAsync also keeps this in sync
         };
 
         _db.MedicalCenters.Add(center);
@@ -51,6 +58,7 @@ public class CreateMedicalCenterCommandHandler
         return new CreateMedicalCenterResponse(
             center.Id, center.Name, center.Type,
             center.Address, center.Phone, center.IsActive,
-            center.Latitude, center.Longitude);
+            center.Latitude, center.Longitude,
+            center.CreatedAt, center.UpdatedAt);
     }
 }

@@ -19,70 +19,74 @@ Table family_memberships {
   user_id uuid [ref: > users.id]
   family_group_id uuid [ref: > family_groups.id]
   is_admin boolean [default: false]
-  relationship varchar [note: 'Padre, Hijo, etc.']
-  
-  Indexes {
-    (user_id, family_group_id) [unique]
-  }
+  relationship varchar
 }
 
-// --- AnimalCare (Mascotas de la Familia) ---
+// --- AnimalCare (Mascotas) ---
 
 Table pets {
   id uuid [pk, default: `gen_random_uuid()`]
   family_group_id uuid [ref: > family_groups.id]
   name varchar [not null]
-  species varchar [note: 'Perro, Gato, Ave, etc.']
+  species varchar
   breed varchar
   birth_date date
   photo_url text
-  chip_number varchar
-  gender varchar
 }
 
-// --- Seguros Médicos (Soporta Humanos y Mascotas) ---
+// --- Entidades de Salud y Especialidades ---
 
-Table insurers {
-  id uuid [pk]
-  name varchar [not null]
-  type varchar [note: 'Salud Humana, Veterinaria']
-}
-
-Table user_pet_insurances {
-  id uuid [pk]
-  user_id uuid [ref: > users.id, note: 'Null si es seguro de mascota']
-  pet_id uuid [ref: > pets.id, note: 'Null si es seguro de humano']
-  insurer_id uuid [ref: > insurers.id]
-  policy_number varchar
+Table specialties {
+  id serial [pk]
+  name varchar [not null, unique, note: 'Ej: Pediatría, Cardiología, Veterinaria']
   is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
 }
-
-// --- Entidades de Salud ---
 
 Table doctors {
-  id uuid [pk]
+  id uuid [pk, default: `gen_random_uuid()`]
   name varchar [not null]
-  specialty varchar
+  last_name varchar [not null]
+  specialty_id int [ref: > specialties.id] // FK a la nueva tabla
+  register varchar [note: 'Número de colegiatura o registro médico']
+  phone varchar
+  email varchar
+  photo_url text
   is_vet boolean [default: false]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
 }
 
 Table medical_centers {
-  id uuid [pk]
+  id uuid [pk, default: `gen_random_uuid()`]
   name varchar [not null]
-  type varchar [note: 'Hospital, Clínica, Veterinaria, Consultorio']
-   address varchar
-  phone varchar
+  type varchar [note: 'Hospital, Clínica, Veterinaria']
+  address text
   latitude float
   longitude float
-  isActive bool
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
 }
 
-// --- El Corazón: Historia Clínica Heredada ---
+Table doctor_affiliations {
+  id serial [pk]
+  doctor_id uuid [ref: > doctors.id]
+  center_id uuid [ref: > medical_centers.id]
+  office_number varchar
+  work_schedule text
+  
+  Indexes {
+    (doctor_id, center_id) [unique]
+  }
+}
+
+// --- Historia Clínica Heredada ---
 
 Table medical_incidents {
   id uuid [pk, default: `gen_random_uuid()`]
-  owner_user_id uuid [ref: > users.id, note: 'Paciente Humano']
-  pet_id uuid [ref: > pets.id, note: 'Paciente Mascota']
+  owner_user_id uuid [ref: > users.id]
+  pet_id uuid [ref: > pets.id]
   doctor_id uuid [ref: > doctors.id]
   center_id uuid [ref: > medical_centers.id]
   incident_date timestamp
@@ -95,7 +99,7 @@ Table medical_exams {
   id uuid [pk]
   incident_id uuid [ref: > medical_incidents.id]
   exam_name varchar
-  status varchar [note: 'Pendiente, Realizado']
+  status varchar
   results_summary text
 }
 
@@ -108,7 +112,7 @@ Table medications {
   end_date date
 }
 
-// --- Evidencias y Seguimiento ---
+// --- Evidencias y Otros ---
 
 Table attachments {
   id uuid [pk]
@@ -118,19 +122,16 @@ Table attachments {
   file_type varchar
 }
 
-Table daily_compliance {
+Table insurers {
   id uuid [pk]
-  incident_id uuid [ref: > medical_incidents.id]
-  check_date date
-  is_completed boolean
+  name varchar [not null]
 }
 
-// --- Perfil de Salud Rápido ---
-
-Table health_profiles {
-  user_id uuid [pk, ref: - users.id]
-  pet_id uuid [pk, ref: - pets.id]
-  blood_type varchar(10)
-  allergies_summary text
-  chronic_conditions text
+Table user_pet_insurances {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  pet_id uuid [ref: > pets.id]
+  insurer_id uuid [ref: > insurers.id]
+  policy_number varchar
+  is_active boolean [default: true]
 }

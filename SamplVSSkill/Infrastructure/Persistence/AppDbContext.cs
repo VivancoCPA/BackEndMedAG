@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using SamplVSSkill.Domain.Common;
 using SamplVSSkill.Domain.Entities;
 using SamplVSSkill.Domain.Enums;
 
@@ -49,7 +50,24 @@ public class AppDbContext : IdentityDbContext
             entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             entity.Property(e => e.Latitude).HasColumnName("latitude");
             entity.Property(e => e.Longitude).HasColumnName("longitude");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
         });
     }
-}
 
+    // ── Auto-timestamps ─────────────────────────────────────────
+    // Sets UpdatedAt = UtcNow on every write for any entity implementing IHasTimestamps.
+    // CreatedAt is set once by the Create handler — this method never overwrites it.
+    public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<IHasTimestamps>())
+        {
+            if (entry.State == EntityState.Modified)
+                entry.Entity.UpdatedAt = now;
+        }
+
+        return await base.SaveChangesAsync(ct);
+    }
+}

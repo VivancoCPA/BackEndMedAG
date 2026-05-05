@@ -24,6 +24,7 @@ public static class ServiceCollectionExtensions
 
         // ── Identity ──
         services.AddIdentityCore<IdentityUser>()
+            .AddRoles<IdentityRole>()                          // enables RoleManager<IdentityRole>
             .AddEntityFrameworkStores<AppDbContext>();
 
         // ── JWT Authentication ──

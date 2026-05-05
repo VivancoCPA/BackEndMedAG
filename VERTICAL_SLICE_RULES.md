@@ -429,10 +429,148 @@ private static async Task<IResult> Handle(
 5. **No crear capas de servicio** — el handler ES la lógica del caso de uso
 6. **No usar EF Core para SELECT** — usar Dapper con SQL raw
 7. **No poner lógica de negocio en el Endpoint** — delegarla al handler
+8. **No usar body en `MapDelete` ni `MapGet`** — Minimal APIs no permite leer el request body en estos métodos. Usar query string con `[AsParameters]`:
+
+```csharp
+// ❌ Falla en runtime: "Body was inferred but the method does not allow inferred body parameters"
+app.MapDelete("/api/users/{userId}/claims", Handle);
+private static Task<IResult> Handle(string userId, MyCommand command, ...) // command = body → ERROR
+
+// ✅ Correcto: parámetros por query string
+app.MapDelete("/api/users/{userId}/claims", Handle);
+private static Task<IResult> Handle(
+    string userId,
+    [AsParameters] MyParams p,   // ?claimType=X&claimValue=Y
+    MyHandler handler, ...) => ...
+
+// Regla rápida por método HTTP:
+// POST / PUT / PATCH → pueden leer body
+// GET / DELETE       → solo route params y query string
+```
+
+---
+
+## 9.5 Legibilidad y Mantenimiento — Reglas
+
+> Estas reglas se derivan de la revisión de la arquitectura del proyecto.
+> El objetivo es que **cualquier desarrollador nuevo pueda entender un slice en menos de 2 minutos**.
+
+### 9.5.1 Organización de archivos por slice
+
+Cada feature **siempre** tiene exactamente estos archivos (no más, no menos):
+
+| Archivo | Contiene | Cuando crearlo |
+|---------|----------|----------------|
+| `{Op}{Domain}Command.cs` | Command record + Response record + Handler | Siempre |
+| `{Op}{Domain}Endpoint.cs` | Clase estática con `Map()` + `Handle()` privado | Siempre |
+| `{Op}{Domain}Validator.cs` | FluentValidation rules | Solo si el Command recibe input |
+
+**No crear** archivos adicionales dentro del slice (interfaces, mappers, helpers propios del slice).
+
+### 9.5.2 Regla del método público único
+
+El **único** método público de un slice es `Map(IEndpointRouteBuilder)`.
+Todo lo demás — `Handle`, helpers, constructors del handler — es `private` o `internal`.
+
+```csharp
+public static class CreateMedicalCenterEndpoint
+{
+    public static void Map(IEndpointRouteBuilder app) => ...   // ← público: entry point
+
+    private static async Task<IResult> Handle(...)             // ← privado: implementación
+    {
+        ...
+    }
+}
+```
+
+### 9.5.3 Handlers con lógica compleja — extraer métodos privados
+
+Cuando un handler tiene lógica no trivial (SQL dinámico, cálculos, transformaciones),
+**extrae métodos privados estáticos** con nombres descriptivos en lugar de comentarios inline.
+
+```csharp
+// ❌ Difícil de leer — lógica inline con comentarios
+public async Task<PaginatedResult<T>> HandleAsync(Params p, CancellationToken ct)
+{
+    // build where
+    var where = string.Empty;
+    if (!string.IsNullOrWhiteSpace(p.Search)) { ... where = "WHERE ..."; }
+
+    // build order
+    var col = _whitelist.TryGetValue(...) ? col : "name";
+    var orderBy = $"ORDER BY {col} {p.SortDesc ? "DESC" : "ASC"}";
+
+    var sql = $"SELECT ... FROM table {where} {orderBy} LIMIT @PS OFFSET @O";
+    ...
+}
+
+// ✅ Fácil de leer — métodos privados con nombres descriptivos
+public async Task<PaginatedResult<T>> HandleAsync(Params p, CancellationToken ct)
+{
+    var parameters = BuildParameters(p, pageSize, offset);
+    var where      = BuildWhereClause(p);
+    var orderBy    = BuildOrderByClause(p);
+    var sql        = BuildDataSql(where, orderBy);
+    ...
+}
+
+private static string BuildWhereClause(Params p) { ... }
+private static string BuildOrderByClause(Params p) { ... }
+private static string BuildDataSql(string where, string orderBy) => $"...";
+```
+
+### 9.5.4 SQL dinámico — regla de seguridad obligatoria
+
+Cuando el cliente controla el ORDER BY, **siempre usar whitelist**. Nunca interpolar directamente el valor del cliente en SQL.
+
+```csharp
+// ✅ Whitelist como campo estático del handler — visible y auditable
+private static readonly Dictionary<string, string> AllowedSortColumns =
+    new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["name"]     = "name",
+        ["type"]     = "type",
+        ["address"]  = "address",
+        ["isactive"] = "is_active"
+    };
+
+// Uso con fallback seguro
+var column = AllowedSortColumns.GetValueOrDefault(queryParams.SortBy ?? "name", "name");
+```
+
+### 9.5.5 Registro explícito en EndpointExtensions — sin magia
+
+Los endpoints y handlers se registran **manualmente y explícitamente** en `EndpointExtensions.cs`.
+Esto es intencional: hace que el árbol de dependencias sea auditable sin reflexión ni convención implícita.
+
+```csharp
+// ── Medical Centers ──          ← grupo visual por dominio
+CreateMedicalCenterEndpoint.Map(app);
+GetMedicalCenterEndpoint.Map(app);
+PagedMedicalCentersEndpoint.Map(app);
+UpdateMedicalCenterEndpoint.Map(app);
+DeleteMedicalCenterEndpoint.Map(app);   // ← soft delete / toggle
+```
+
+> **Regla:** Al agregar una nueva feature, actualizar `EndpointExtensions` en **dos lugares**:
+> 1. `MapFeatureEndpoints()` — registrar el endpoint
+> 2. `AddFeatureHandlers()` — registrar el handler en DI
+
+### 9.5.6 Resumen — qué priorizar
+
+| Prioridad | Principio |
+|-----------|-----------|
+| 🔴 Alta | Extraer métodos privados cuando `HandleAsync` supera ~20 líneas |
+| 🔴 Alta | Whitelist obligatoria para cualquier valor del cliente en SQL |
+| 🟡 Media | Un archivo por propósito (Command, Endpoint, Validator) |
+| 🟡 Media | Nombres descriptivos en métodos privados — sin comentarios redundantes |
+| 🟢 Baja | Agrupar visualmente los registros en `EndpointExtensions` por dominio |
 
 ---
 
 ## 10. Checklist para Agregar una Nueva Feature
+
 
 ```markdown
 - [ ] Crear directorio: `Features/{DomainPlural}/{Operación}{Domain}/`

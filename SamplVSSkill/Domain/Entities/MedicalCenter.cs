@@ -1,8 +1,9 @@
+using SamplVSSkill.Domain.Common;
 using SamplVSSkill.Domain.Enums;
 
 namespace SamplVSSkill.Domain.Entities;
 
-public class MedicalCenter
+public class MedicalCenter : IHasTimestamps
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -12,4 +13,7 @@ public class MedicalCenter
     public bool IsActive { get; set; } = true;
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }
+

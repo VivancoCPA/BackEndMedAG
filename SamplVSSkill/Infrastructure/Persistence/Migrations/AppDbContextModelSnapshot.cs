@@ -256,6 +256,10 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("address");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -282,6 +286,10 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                     b.Property<string>("Type")
                         .HasColumnType("text")
                         .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.HasKey("Id");
 

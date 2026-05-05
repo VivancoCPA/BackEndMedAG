@@ -22,7 +22,9 @@ public record UpdateMedicalCenterResponse(
     string? Phone,
     bool IsActive,
     double? Latitude,
-    double? Longitude);
+    double? Longitude,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
 // ── Command Handler (EF Core) ───────────────────────────────────
 public class UpdateMedicalCenterCommandHandler
@@ -31,26 +33,30 @@ public class UpdateMedicalCenterCommandHandler
 
     public UpdateMedicalCenterCommandHandler(AppDbContext db) => _db = db;
 
-    public async Task<UpdateMedicalCenterResponse?> HandleAsync(Guid id, UpdateMedicalCenterCommand command, CancellationToken ct)
+    public async Task<UpdateMedicalCenterResponse?> HandleAsync(
+        Guid id, UpdateMedicalCenterCommand command, CancellationToken ct)
     {
         var center = await _db.MedicalCenters.FirstOrDefaultAsync(c => c.Id == id, ct);
 
         if (center is null)
             return null;
 
-        center.Name = command.Name;
-        center.Type = command.Type;
-        center.Address = command.Address;
-        center.Phone = command.Phone;
-        center.IsActive = command.IsActive;
-        center.Latitude = command.Latitude;
+        center.Name      = command.Name;
+        center.Type      = command.Type;
+        center.Address   = command.Address;
+        center.Phone     = command.Phone;
+        center.IsActive  = command.IsActive;
+        center.Latitude  = command.Latitude;
         center.Longitude = command.Longitude;
+        // UpdatedAt is set automatically by AppDbContext.SaveChangesAsync
+        // CreatedAt is never modified here
 
         await _db.SaveChangesAsync(ct);
 
         return new UpdateMedicalCenterResponse(
             center.Id, center.Name, center.Type,
             center.Address, center.Phone, center.IsActive,
-            center.Latitude, center.Longitude);
+            center.Latitude, center.Longitude,
+            center.CreatedAt, center.UpdatedAt);
     }
 }
