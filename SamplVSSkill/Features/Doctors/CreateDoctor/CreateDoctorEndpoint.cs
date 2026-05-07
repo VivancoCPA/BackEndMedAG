@@ -6,13 +6,13 @@ public static class CreateDoctorEndpoint
 {
     public static void Map(IEndpointRouteBuilder app) =>
         app.MapPost("/api/doctors", Handle)
-           .AddEndpointFilter<ValidationFilter<CreateDoctorCommand>>()
-           .WithTags("Doctors")
-           .WithName("CreateDoctor")
+           .AddEndpointFilter<ValidationFilter<CreateDoctorCommand>>()// valida request antes de ejecutar handler
+           .WithTags("Doctors")// define el nombre de la etiqueta para agrupar endpoints en la documentacion
+           .WithName("CreateDoctor")// define el nombre del endpoint para generar url
            .Produces<CreateDoctorResponse>(StatusCodes.Status201Created)
-           .ProducesValidationProblem()
-           .Produces(StatusCodes.Status401Unauthorized)
-           .RequireAuthorization();
+           .ProducesValidationProblem()// si falla la validacion retorna problemas de validacion    
+           .Produces(StatusCodes.Status401Unauthorized)// si falla la autenticacion retorna 401
+           .RequireAuthorization();// requiere autorizacion
 
     private static async Task<IResult> Handle(
         CreateDoctorCommand command,

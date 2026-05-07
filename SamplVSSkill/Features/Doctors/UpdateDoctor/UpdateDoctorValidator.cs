@@ -10,8 +10,12 @@ public class UpdateDoctorValidator : AbstractValidator<UpdateDoctorCommand>
             .NotEmpty().WithMessage("El nombre del doctor es requerido.")
             .MaximumLength(200).WithMessage("El nombre no puede exceder 200 caracteres.");
 
-        RuleFor(x => x.Specialty)
-            .MaximumLength(200).WithMessage("La especialidad no puede exceder 200 caracteres.")
-            .When(x => x.Specialty is not null);
+        RuleFor(x => x.LastName)
+            .NotEmpty().WithMessage("El apellido del doctor es requerido.")
+            .MaximumLength(200).WithMessage("El apellido no puede exceder 200 caracteres.");
+
+        RuleFor(x => x.Email)
+            .EmailAddress().WithMessage("El email no es válido.")
+            .When(x => x.Email is not null);
     }
 }

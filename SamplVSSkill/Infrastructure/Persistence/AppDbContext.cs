@@ -16,10 +16,24 @@ public class AppDbContext : IdentityDbContext
 
     public DbSet<Doctor> Doctors => Set<Doctor>();
     public DbSet<MedicalCenter> MedicalCenters => Set<MedicalCenter>();
+    public DbSet<Specialty> Specialties => Set<Specialty>();
+    public DbSet<Insurer> Insurers => Set<Insurer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // ── Specialty ───────────────────────────────────────────
+        modelBuilder.Entity<Specialty>(entity =>
+        {
+            entity.ToTable("specialties");
+            entity.HasKey(e => e.Id);
+            // int serial — DB generates the value on insert
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        });
 
         // ── Doctor ──────────────────────────────────────────────
         modelBuilder.Entity<Doctor>(entity =>
@@ -28,8 +42,23 @@ public class AppDbContext : IdentityDbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name").IsRequired();
-            entity.Property(e => e.Specialty).HasColumnName("specialty");
+            entity.Property(e => e.LastName).HasColumnName("last_name").IsRequired();
+            entity.Property(e => e.SpecialtyId).HasColumnName("specialty_id");
+            entity.Property(e => e.Register).HasColumnName("register");
+            entity.Property(e => e.Phone).HasColumnName("phone");
+            entity.Property(e => e.Email).HasColumnName("email");
+            entity.Property(e => e.PhotoUrl).HasColumnName("photo_url");
             entity.Property(e => e.IsVet).HasColumnName("is_vet").HasDefaultValue(false);
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            // FK: Doctor → Specialty
+            entity.HasOne<Specialty>()
+                  .WithMany()
+                  .HasForeignKey(e => e.SpecialtyId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         // ── MedicalCenter ───────────────────────────────────────
@@ -40,7 +69,7 @@ public class AppDbContext : IdentityDbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name").IsRequired();
 
-            // Enum almacenado como string (varchar) en PostgreSQL
+            // Enum stored as string in PostgreSQL
             entity.Property(e => e.Type)
                   .HasColumnName("type")
                   .HasConversion<string>();
@@ -50,6 +79,23 @@ public class AppDbContext : IdentityDbContext
             entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             entity.Property(e => e.Latitude).HasColumnName("latitude");
             entity.Property(e => e.Longitude).HasColumnName("longitude");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        // ── Insurer ─────────────────────────────────────────────
+        modelBuilder.Entity<Insurer>(entity =>
+        {
+            entity.ToTable("insurers");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.Address).HasColumnName("address").IsRequired();
+            entity.Property(e => e.Phone).HasColumnName("phone").IsRequired();
+            entity.Property(e => e.Email).HasColumnName("email").IsRequired();
+            entity.Property(e => e.PersonInCharge).HasColumnName("person_in_charge");
+            entity.Property(e => e.LogoUrl).HasColumnName("logo_url");
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
         });

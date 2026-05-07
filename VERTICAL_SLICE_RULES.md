@@ -448,6 +448,21 @@ private static Task<IResult> Handle(
 // GET / DELETE       → solo route params y query string
 ```
 
+9. **Usar `long` (no `int`) para resultados de agregados en Dapper** — PostgreSQL devuelve `COUNT()`, `SUM()` y `AVG()` como `bigint` (`Int64`). Dapper **no hace conversión implícita** al mapear al constructor de un `record`, y lanzará `InvalidOperationException` en runtime si el tipo no coincide exactamente:
+
+```csharp
+// ❌ Falla en runtime: PostgreSQL retorna bigint, el record espera int
+public record SummaryResponse(int Total, int Active, int Inactive);
+
+// ✅ Correcto: usar long para COUNT(*), SUM() y similares
+public record SummaryResponse(long Total, long Active, long Inactive);
+
+// Tabla de referencia — tipos PostgreSQL → C# en Dapper:
+// COUNT(*) / SUM(int_col) → bigint  → long
+// AVG(col)               → numeric → decimal
+// MAX/MIN(int_col)       → int     → int  ← estos SÍ coinciden
+```
+
 ---
 
 ## 9.5 Legibilidad y Mantenimiento — Reglas

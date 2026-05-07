@@ -12,7 +12,18 @@ using SamplVSSkill.Features.Auth.ToggleUserStatus;
 using SamplVSSkill.Features.Auth.AssignClaim;
 using SamplVSSkill.Features.Auth.RemoveClaim;
 using SamplVSSkill.Features.Auth.GetUserClaims;
-using SamplVSSkill.Features.MedicalCenters.PagedMedicalCenters;
+using SamplVSSkill.Features.Specialties.CreateSpecialty;
+using SamplVSSkill.Features.Specialties.GetSpecialty;
+using SamplVSSkill.Features.Specialties.ListSpecialties;
+using SamplVSSkill.Features.Specialties.PagedSpecialties;
+using SamplVSSkill.Features.Specialties.UpdateSpecialty;
+using SamplVSSkill.Features.Specialties.ToggleSpecialtyStatus;
+using SamplVSSkill.Features.Insurers.CreateInsurer;
+using SamplVSSkill.Features.Insurers.GetInsurer;
+using SamplVSSkill.Features.Insurers.ListInsurers;
+using SamplVSSkill.Features.Insurers.PagedInsurers;
+using SamplVSSkill.Features.Insurers.UpdateInsurer;
+using SamplVSSkill.Features.Insurers.ToggleInsurerStatus;
 using SamplVSSkill.Features.Doctors.CreateDoctor;
 using SamplVSSkill.Features.Doctors.GetDoctor;
 using SamplVSSkill.Features.Doctors.ListDoctors;
@@ -21,6 +32,8 @@ using SamplVSSkill.Features.Doctors.DeleteDoctor;
 using SamplVSSkill.Features.MedicalCenters.CreateMedicalCenter;
 using SamplVSSkill.Features.MedicalCenters.GetMedicalCenter;
 using SamplVSSkill.Features.MedicalCenters.ListMedicalCenters;
+using SamplVSSkill.Features.MedicalCenters.PagedMedicalCenters;
+using SamplVSSkill.Features.MedicalCenters.SummaryMedicalCenters;
 using SamplVSSkill.Features.MedicalCenters.UpdateMedicalCenter;
 using SamplVSSkill.Features.MedicalCenters.DeleteMedicalCenter;
 
@@ -58,6 +71,22 @@ public static class EndpointExtensions
         RemoveClaimEndpoint.Map(app);
         GetUserClaimsEndpoint.Map(app);
 
+        // ── Specialties ──
+        CreateSpecialtyEndpoint.Map(app);
+        GetSpecialtyEndpoint.Map(app);
+        ListSpecialtiesEndpoint.Map(app);
+        PagedSpecialtiesEndpoint.Map(app);
+        UpdateSpecialtyEndpoint.Map(app);
+        ToggleSpecialtyStatusEndpoint.Map(app);
+
+        // ── Insurers ──
+        CreateInsurerEndpoint.Map(app);
+        GetInsurerEndpoint.Map(app);
+        ListInsurersEndpoint.Map(app);
+        PagedInsurersEndpoint.Map(app);
+        UpdateInsurerEndpoint.Map(app);
+        ToggleInsurerStatusEndpoint.Map(app);
+
         // ── Doctors ──
         CreateDoctorEndpoint.Map(app);
         GetDoctorEndpoint.Map(app);
@@ -70,6 +99,7 @@ public static class EndpointExtensions
         GetMedicalCenterEndpoint.Map(app);
         ListMedicalCentersEndpoint.Map(app);
         PagedMedicalCentersEndpoint.Map(app);
+        SummaryMedicalCentersEndpoint.Map(app);
         UpdateMedicalCenterEndpoint.Map(app);
         DeleteMedicalCenterEndpoint.Map(app);
 
@@ -105,6 +135,22 @@ public static class EndpointExtensions
         services.AddScoped<RemoveClaimCommandHandler>();
         services.AddScoped<GetUserClaimsQueryHandler>();
 
+        // ── Specialties ──
+        services.AddScoped<CreateSpecialtyCommandHandler>();
+        services.AddScoped<GetSpecialtyQueryHandler>();
+        services.AddScoped<ListSpecialtiesQueryHandler>();
+        services.AddScoped<PagedSpecialtiesQueryHandler>();
+        services.AddScoped<UpdateSpecialtyCommandHandler>();
+        services.AddScoped<ToggleSpecialtyStatusCommandHandler>();
+
+        // ── Insurers ──
+        services.AddScoped<CreateInsurerCommandHandler>();
+        services.AddScoped<GetInsurerQueryHandler>();
+        services.AddScoped<ListInsurersQueryHandler>();
+        services.AddScoped<PagedInsurersQueryHandler>();
+        services.AddScoped<UpdateInsurerCommandHandler>();
+        services.AddScoped<ToggleInsurerStatusCommandHandler>();
+
         // ── Doctors ──
         services.AddScoped<CreateDoctorCommandHandler>();
         services.AddScoped<GetDoctorQueryHandler>();
@@ -117,6 +163,7 @@ public static class EndpointExtensions
         services.AddScoped<GetMedicalCenterQueryHandler>();
         services.AddScoped<ListMedicalCentersQueryHandler>();
         services.AddScoped<PagedMedicalCentersQueryHandler>();
+        services.AddScoped<SummaryMedicalCentersQueryHandler>();
         services.AddScoped<UpdateMedicalCenterCommandHandler>();
         services.AddScoped<DeleteMedicalCenterCommandHandler>();
 

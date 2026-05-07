@@ -1,11 +1,13 @@
+using SamplVSSkill.Domain.Common;
+
 namespace SamplVSSkill.Domain.Entities;
 
-public class Doctor
+public class Doctor : IHasTimestamps
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
-    public string? Specialty { get; set; }
+    public int? SpecialtyId { get; set; }           // FK → specialties.id
     public string? Register { get; set; }
     public string? Phone { get; set; }
     public string? Email { get; set; }

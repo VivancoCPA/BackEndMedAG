@@ -1,0 +1,42 @@
+using Dapper;
+using SamplVSSkill.Infrastructure.Persistence;
+
+namespace SamplVSSkill.Features.Insurers.GetInsurer;
+
+// ── Response ────────────────────────────────────────────────────
+public record GetInsurerResponse(
+    Guid Id, string Name, string Address, string Phone, string Email,
+    string? PersonInCharge, string? LogoUrl, bool IsActive,
+    DateTime CreatedAt, DateTime UpdatedAt);
+
+// ── Query Handler (Dapper) ──────────────────────────────────────
+public class GetInsurerQueryHandler
+{
+    private readonly DapperConnectionFactory _connectionFactory;
+
+    public GetInsurerQueryHandler(DapperConnectionFactory connectionFactory) =>
+        _connectionFactory = connectionFactory;
+
+    public async Task<GetInsurerResponse?> HandleAsync(Guid id, CancellationToken ct)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+
+        const string sql = """
+            SELECT id              AS Id,
+                   name            AS Name,
+                   address         AS Address,
+                   phone           AS Phone,
+                   email           AS Email,
+                   person_in_charge AS PersonInCharge,
+                   logo_url        AS LogoUrl,
+                   is_active       AS IsActive,
+                   created_at      AS CreatedAt,
+                   updated_at      AS UpdatedAt
+            FROM insurers
+            WHERE id = @Id
+            """;
+
+        return await connection.QueryFirstOrDefaultAsync<GetInsurerResponse>(
+            new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+    }
+}

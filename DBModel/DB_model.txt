@@ -103,6 +103,15 @@ Table medical_exams {
   results_summary text
 }
 
+Table centers_type
+{
+  id int [pk]
+  name varchar
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
 Table medications {
   id uuid [pk]
   incident_id uuid [ref: > medical_incidents.id]
@@ -125,6 +134,14 @@ Table attachments {
 Table insurers {
   id uuid [pk]
   name varchar [not null]
+  address varchar [not null]
+  phone varchar [not null]
+  email varchar [not null]
+  person_in_charge varchar
+  logo_url text
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
 }
 
 Table user_pet_insurances {
@@ -135,3 +152,5 @@ Table user_pet_insurances {
   policy_number varchar
   is_active boolean [default: true]
 }
+
+Ref: "users"."created_at" < "users"."photo_url"
