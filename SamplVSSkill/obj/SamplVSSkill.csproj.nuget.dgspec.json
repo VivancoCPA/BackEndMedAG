@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\samplvsskill\\SamplVSSkill.csproj": {}
+    "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\SamplVSSkill\\SamplVSSkill.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\samplvsskill\\SamplVSSkill.csproj": {
+    "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\SamplVSSkill\\SamplVSSkill.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\samplvsskill\\SamplVSSkill.csproj",
+        "projectUniqueName": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\SamplVSSkill\\SamplVSSkill.csproj",
         "projectName": "SamplVSSkill",
-        "projectPath": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\samplvsskill\\SamplVSSkill.csproj",
+        "projectPath": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\SamplVSSkill\\SamplVSSkill.csproj",
         "packagesPath": "C:\\Users\\ANTONIO\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\samplvsskill\\obj\\",
+        "outputPath": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\SamplVSSkill\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

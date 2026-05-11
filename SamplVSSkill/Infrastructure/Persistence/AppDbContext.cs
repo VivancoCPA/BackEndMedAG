@@ -18,10 +18,24 @@ public class AppDbContext : IdentityDbContext
     public DbSet<MedicalCenter> MedicalCenters => Set<MedicalCenter>();
     public DbSet<Specialty> Specialties => Set<Specialty>();
     public DbSet<Insurer> Insurers => Set<Insurer>();
+    public DbSet<CenterType> CenterTypes => Set<CenterType>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // ── CenterType ───────────────────────────────────────
+        modelBuilder.Entity<CenterType>(entity =>
+        {
+            entity.ToTable("centers_type");
+            entity.HasKey(e => e.Id);
+            // int identity — DB generates the value on insert
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        });
 
         // ── Specialty ───────────────────────────────────────────
         modelBuilder.Entity<Specialty>(entity =>

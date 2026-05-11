@@ -13,8 +13,16 @@ using SamplVSSkill.Features.Auth.AssignClaim;
 using SamplVSSkill.Features.Auth.RemoveClaim;
 using SamplVSSkill.Features.Auth.GetUserClaims;
 using SamplVSSkill.Features.Specialties.CreateSpecialty;
+using SamplVSSkill.Features.CenterTypes.CreateCenterType;
+using SamplVSSkill.Features.CenterTypes.GetCenterType;
+using SamplVSSkill.Features.CenterTypes.ListCenterTypes;
+using SamplVSSkill.Features.CenterTypes.PagedCenterTypes;
+using SamplVSSkill.Features.CenterTypes.UpdateCenterType;
+using SamplVSSkill.Features.CenterTypes.LookupCenterTypes;
+using SamplVSSkill.Features.CenterTypes.ToggleCenterTypeStatus;
 using SamplVSSkill.Features.Specialties.GetSpecialty;
 using SamplVSSkill.Features.Specialties.ListSpecialties;
+using SamplVSSkill.Features.Specialties.LookupSpecialties;
 using SamplVSSkill.Features.Specialties.PagedSpecialties;
 using SamplVSSkill.Features.Specialties.UpdateSpecialty;
 using SamplVSSkill.Features.Specialties.ToggleSpecialtyStatus;
@@ -23,6 +31,7 @@ using SamplVSSkill.Features.Insurers.GetInsurer;
 using SamplVSSkill.Features.Insurers.ListInsurers;
 using SamplVSSkill.Features.Insurers.PagedInsurers;
 using SamplVSSkill.Features.Insurers.UpdateInsurer;
+using SamplVSSkill.Features.Insurers.LookupInsurers;
 using SamplVSSkill.Features.Insurers.ToggleInsurerStatus;
 using SamplVSSkill.Features.Doctors.CreateDoctor;
 using SamplVSSkill.Features.Doctors.GetDoctor;
@@ -71,10 +80,20 @@ public static class EndpointExtensions
         RemoveClaimEndpoint.Map(app);
         GetUserClaimsEndpoint.Map(app);
 
+        // ── Center Types ──
+        CreateCenterTypeEndpoint.Map(app);
+        GetCenterTypeEndpoint.Map(app);
+        ListCenterTypesEndpoint.Map(app);
+        LookupCenterTypesEndpoint.Map(app);
+        PagedCenterTypesEndpoint.Map(app);
+        UpdateCenterTypeEndpoint.Map(app);
+        ToggleCenterTypeStatusEndpoint.Map(app);
+
         // ── Specialties ──
         CreateSpecialtyEndpoint.Map(app);
         GetSpecialtyEndpoint.Map(app);
         ListSpecialtiesEndpoint.Map(app);
+        LookupSpecialtiesEndpoint.Map(app);
         PagedSpecialtiesEndpoint.Map(app);
         UpdateSpecialtyEndpoint.Map(app);
         ToggleSpecialtyStatusEndpoint.Map(app);
@@ -83,6 +102,7 @@ public static class EndpointExtensions
         CreateInsurerEndpoint.Map(app);
         GetInsurerEndpoint.Map(app);
         ListInsurersEndpoint.Map(app);
+        LookupInsurersEndpoint.Map(app);
         PagedInsurersEndpoint.Map(app);
         UpdateInsurerEndpoint.Map(app);
         ToggleInsurerStatusEndpoint.Map(app);
@@ -139,6 +159,7 @@ public static class EndpointExtensions
         services.AddScoped<CreateSpecialtyCommandHandler>();
         services.AddScoped<GetSpecialtyQueryHandler>();
         services.AddScoped<ListSpecialtiesQueryHandler>();
+        services.AddScoped<LookupSpecialtiesQueryHandler>();
         services.AddScoped<PagedSpecialtiesQueryHandler>();
         services.AddScoped<UpdateSpecialtyCommandHandler>();
         services.AddScoped<ToggleSpecialtyStatusCommandHandler>();
@@ -147,9 +168,19 @@ public static class EndpointExtensions
         services.AddScoped<CreateInsurerCommandHandler>();
         services.AddScoped<GetInsurerQueryHandler>();
         services.AddScoped<ListInsurersQueryHandler>();
+        services.AddScoped<LookupInsurersQueryHandler>();
         services.AddScoped<PagedInsurersQueryHandler>();
         services.AddScoped<UpdateInsurerCommandHandler>();
         services.AddScoped<ToggleInsurerStatusCommandHandler>();
+
+        // ── Center Types ──
+        services.AddScoped<CreateCenterTypeCommandHandler>();
+        services.AddScoped<GetCenterTypeQueryHandler>();
+        services.AddScoped<ListCenterTypesQueryHandler>();
+        services.AddScoped<LookupCenterTypesQueryHandler>();
+        services.AddScoped<PagedCenterTypesQueryHandler>();
+        services.AddScoped<UpdateCenterTypeCommandHandler>();
+        services.AddScoped<ToggleCenterTypeStatusCommandHandler>();
 
         // ── Doctors ──
         services.AddScoped<CreateDoctorCommandHandler>();
