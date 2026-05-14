@@ -9,12 +9,13 @@ public record PagedInsurersParams(
     int Page = 1,
     int PageSize = 10,
     string? Search = null,
-    string? SortBy = "name",
+    string? SortBy = "created_at",
     bool SortDesc = false);
 
 // ── Response Item ───────────────────────────────────────────────
 public record PagedInsurerItem(
     Guid Id, string Name, string Phone, string Email,
+    string? Address, string? LogoUrl,
     string? PersonInCharge, bool IsActive, DateTime CreatedAt, DateTime UpdatedAt);
 
 // ── Query Handler (Dapper) ──────────────────────────────────────
@@ -25,9 +26,11 @@ public class PagedInsurersQueryHandler
     private static readonly Dictionary<string, string> AllowedSortColumns =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["name"]     = "name",
-            ["email"]    = "email",
-            ["isactive"] = "is_active"
+            ["name"]       = "name",
+            ["email"]      = "email",
+            ["isactive"]   = "is_active",
+            ["created_at"] = "created_at",
+            ["updated_at"] = "updated_at"
         };
 
     public PagedInsurersQueryHandler(DapperConnectionFactory connectionFactory) =>
@@ -78,7 +81,8 @@ public class PagedInsurersQueryHandler
 
     private static string BuildOrderByClause(PagedInsurersParams p)
     {
-        var column    = AllowedSortColumns.GetValueOrDefault(p.SortBy ?? "name", "name");
+        // Sin SortBy → orden por fecha de creación
+        var column    = AllowedSortColumns.GetValueOrDefault(p.SortBy ?? "created_at", "created_at");
         var direction = p.SortDesc ? "DESC" : "ASC";
         return $"ORDER BY {column} {direction}";
     }
@@ -88,6 +92,8 @@ public class PagedInsurersQueryHandler
                name             AS Name,
                phone            AS Phone,
                email            AS Email,
+               address          AS Address,
+               logo_url          AS LogoUrl,
                person_in_charge AS PersonInCharge,
                is_active        AS IsActive,
                created_at       AS CreatedAt,

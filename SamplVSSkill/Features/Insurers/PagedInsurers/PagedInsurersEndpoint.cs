@@ -10,8 +10,8 @@ public static class PagedInsurersEndpoint
            .WithName("PagedInsurers")
            .Produces<PaginatedResult<PagedInsurerItem>>()
            .Produces(StatusCodes.Status400BadRequest)
-           .Produces(StatusCodes.Status401Unauthorized)
-           .RequireAuthorization();
+           .Produces(StatusCodes.Status401Unauthorized);
+           //.RequireAuthorization();
 
     private static async Task<IResult> Handle(
         [AsParameters] PagedInsurersParams queryParams,

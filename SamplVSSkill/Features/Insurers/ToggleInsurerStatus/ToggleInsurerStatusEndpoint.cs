@@ -8,8 +8,8 @@ public static class ToggleInsurerStatusEndpoint
            .WithName("ToggleInsurerStatus")
            .Produces<ToggleInsurerStatusResponse>()
            .Produces(StatusCodes.Status404NotFound)
-           .Produces(StatusCodes.Status401Unauthorized)
-           .RequireAuthorization();
+           .Produces(StatusCodes.Status401Unauthorized);
+           //.RequireAuthorization();
 
     private static async Task<IResult> Handle(
         Guid id,

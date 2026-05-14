@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\SamplVSSkill\\SamplVSSkill.csproj": {}
+    "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\samplvsskill\\SamplVSSkill.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\SamplVSSkill\\SamplVSSkill.csproj": {
+    "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\samplvsskill\\SamplVSSkill.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\SamplVSSkill\\SamplVSSkill.csproj",
+        "projectUniqueName": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\samplvsskill\\SamplVSSkill.csproj",
         "projectName": "SamplVSSkill",
-        "projectPath": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\SamplVSSkill\\SamplVSSkill.csproj",
+        "projectPath": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\samplvsskill\\SamplVSSkill.csproj",
         "packagesPath": "C:\\Users\\ANTONIO\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\SamplVSSkill\\obj\\",
+        "outputPath": "C:\\Users\\ANTONIO\\Cursor\\Sample\\SamplVSSkill\\samplvsskill\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -45,7 +45,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net10.0": {
@@ -115,7 +115,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.104/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.203/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

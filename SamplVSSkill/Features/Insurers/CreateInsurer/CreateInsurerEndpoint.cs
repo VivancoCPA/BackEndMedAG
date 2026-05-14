@@ -11,8 +11,8 @@ public static class CreateInsurerEndpoint
            .WithName("CreateInsurer")
            .Produces<CreateInsurerResponse>(StatusCodes.Status201Created)
            .ProducesValidationProblem()
-           .Produces(StatusCodes.Status401Unauthorized)
-           .RequireAuthorization();
+           .Produces(StatusCodes.Status401Unauthorized);
+           //.RequireAuthorization();
 
     private static async Task<IResult> Handle(
         CreateInsurerCommand command,

@@ -12,8 +12,8 @@ public static class UpdateInsurerEndpoint
            .Produces<UpdateInsurerResponse>()
            .Produces(StatusCodes.Status404NotFound)
            .ProducesValidationProblem()
-           .Produces(StatusCodes.Status401Unauthorized)
-           .RequireAuthorization();
+           .Produces(StatusCodes.Status401Unauthorized);
+           //.RequireAuthorization();
 
     private static async Task<IResult> Handle(
         Guid id,
