@@ -61,7 +61,7 @@ Table doctors {
 Table medical_centers {
   id uuid [pk, default: `gen_random_uuid()`]
   name varchar [not null]
-  type varchar [note: 'Hospital, Clínica, Veterinaria']
+  type_id int [ref: > centers_type.id]
   address text
   latitude float
   longitude float

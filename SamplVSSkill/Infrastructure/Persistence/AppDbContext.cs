@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SamplVSSkill.Domain.Common;
 using SamplVSSkill.Domain.Entities;
-using SamplVSSkill.Domain.Enums;
 
 namespace SamplVSSkill.Infrastructure.Persistence;
 
@@ -83,10 +82,8 @@ public class AppDbContext : IdentityDbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name").IsRequired();
 
-            // Enum stored as string in PostgreSQL
-            entity.Property(e => e.Type)
-                  .HasColumnName("type")
-                  .HasConversion<string>();
+            // FK → centers_type.id (type_id column)
+            entity.Property(e => e.TypeId).HasColumnName("type_id");
 
             entity.Property(e => e.Address).HasColumnName("address");
             entity.Property(e => e.Phone).HasColumnName("phone");
@@ -95,6 +92,13 @@ public class AppDbContext : IdentityDbContext
             entity.Property(e => e.Longitude).HasColumnName("longitude");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            // Relación: MedicalCenter → CenterType (nullable)
+            entity.HasOne(e => e.CenterType)
+                  .WithMany()
+                  .HasForeignKey(e => e.TypeId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         // ── Insurer ─────────────────────────────────────────────

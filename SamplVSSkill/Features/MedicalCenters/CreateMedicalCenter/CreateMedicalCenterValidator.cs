@@ -10,9 +10,10 @@ public class CreateMedicalCenterValidator : AbstractValidator<CreateMedicalCente
             .NotEmpty().WithMessage("El nombre del centro médico es requerido.")
             .MaximumLength(200).WithMessage("El nombre no puede exceder 200 caracteres.");
 
-        // Type is an enum — invalid values are rejected by model binding before validation
-        // Optional: validate it is not null if required
-        RuleFor(x => x.Type).NotNull().WithMessage("El tipo es requerido.");
+        // TypeId es el FK hacia centers_type — debe ser un entero positivo si se proporciona
+        RuleFor(x => x.TypeId)
+            .GreaterThan(0).WithMessage("El tipo de centro debe ser válido.")
+            .When(x => x.TypeId.HasValue);
 
         RuleFor(x => x.Address)
             .MaximumLength(500).WithMessage("La dirección no puede exceder 500 caracteres.")

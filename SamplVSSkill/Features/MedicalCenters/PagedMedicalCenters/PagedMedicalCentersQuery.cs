@@ -1,6 +1,5 @@
 using Dapper;
 using SamplVSSkill.Domain.Common;
-using SamplVSSkill.Domain.Enums;
 using SamplVSSkill.Infrastructure.Persistence;
 
 namespace SamplVSSkill.Features.MedicalCenters.PagedMedicalCenters;
@@ -10,14 +9,15 @@ public record PagedMedicalCentersParams(
     int Page = 1,
     int PageSize = 10,
     string? Search = null,
-    string? SortBy = "name",
+    string? SortBy = "created_at",
     bool SortDesc = false);
 
 // ── Response Item ───────────────────────────────────────────────
 public record PagedMedicalCenterItem(
     Guid Id,
     string Name,
-    MedicalCenterType? Type,
+    int? TypeId,
+    string? TypeName,
     string? Address,
     string? Phone,
     bool IsActive,
@@ -33,13 +33,16 @@ public class PagedMedicalCentersQueryHandler
     private readonly DapperConnectionFactory _connectionFactory;
 
     // Whitelist de columnas permitidas para ORDER BY — previene SQL injection
+    // Todas las referencias usan el alias "mc." para evitar ambigüedad con el JOIN
     private static readonly Dictionary<string, string> AllowedSortColumns =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["name"]     = "name",
-            ["type"]     = "type",
-            ["address"]  = "address",
-            ["isactive"] = "is_active"
+            ["name"]       = "mc.name",
+            ["type"]       = "ct.name",
+            ["address"]    = "mc.address",
+            ["isactive"]   = "mc.is_active",
+            ["created_at"] = "mc.created_at",
+            ["updated_at"] = "mc.updated_at"
         };
 
     public PagedMedicalCentersQueryHandler(DapperConnectionFactory connectionFactory) =>
@@ -57,7 +60,7 @@ public class PagedMedicalCentersQueryHandler
         var where      = BuildWhereClause(queryParams);
         var orderBy    = BuildOrderByClause(queryParams);
 
-        var countSql = $"SELECT COUNT(*) FROM medical_centers {where}";
+        var countSql = BuildCountSql(where);
         var dataSql  = BuildDataSql(where, orderBy);
 
         using var connection = _connectionFactory.CreateConnection();
@@ -91,34 +94,44 @@ public class PagedMedicalCentersQueryHandler
         if (string.IsNullOrWhiteSpace(queryParams.Search))
             return string.Empty;
 
+        // Búsqueda sobre nombre del centro y nombre del tipo (via JOIN)
         return """
-               WHERE name    ILIKE @Search
-                  OR address ILIKE @Search
-                  OR type    ILIKE @Search
+               WHERE mc.name ILIKE @Search
+                  OR mc.address ILIKE @Search
+                  OR ct.name    ILIKE @Search
                """;
     }
 
     private static string BuildOrderByClause(PagedMedicalCentersParams queryParams)
     {
-        // Si el cliente envía un campo no permitido, cae al default seguro "name"
-        var column    = AllowedSortColumns.GetValueOrDefault(queryParams.SortBy ?? "name", "name");
+        // Sin SortBy → orden por fecha de creación
+        var column    = AllowedSortColumns.GetValueOrDefault(queryParams.SortBy ?? "created_at", "mc.created_at");
         var direction = queryParams.SortDesc ? "DESC" : "ASC";
 
         return $"ORDER BY {column} {direction}";
     }
 
+    private static string BuildCountSql(string where) => $"""
+        SELECT COUNT(*)
+        FROM medical_centers mc
+        LEFT JOIN centers_type ct ON ct.id = mc.type_id
+        {where}
+        """;
+
     private static string BuildDataSql(string where, string orderBy) => $"""
-        SELECT id         AS Id,
-               name       AS Name,
-               type       AS Type,
-               address    AS Address,
-               phone      AS Phone,
-               is_active  AS IsActive,
-               latitude   AS Latitude,
-               longitude  AS Longitude,
-               created_at AS CreatedAt,
-               updated_at AS UpdatedAt
-        FROM medical_centers
+        SELECT mc.id         AS Id,
+               mc.name       AS Name,
+               mc.type_id    AS TypeId,
+               ct.name       AS TypeName,
+               mc.address    AS Address,
+               mc.phone      AS Phone,
+               mc.is_active  AS IsActive,
+               mc.latitude   AS Latitude,
+               mc.longitude  AS Longitude,
+               mc.created_at AS CreatedAt,
+               mc.updated_at AS UpdatedAt
+        FROM medical_centers mc
+        LEFT JOIN centers_type ct ON ct.id = mc.type_id
         {where}
         {orderBy}
         LIMIT @PageSize OFFSET @Offset

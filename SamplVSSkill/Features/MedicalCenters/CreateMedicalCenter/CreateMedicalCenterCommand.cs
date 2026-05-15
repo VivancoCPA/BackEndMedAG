@@ -1,5 +1,4 @@
 using SamplVSSkill.Domain.Entities;
-using SamplVSSkill.Domain.Enums;
 using SamplVSSkill.Infrastructure.Persistence;
 
 namespace SamplVSSkill.Features.MedicalCenters.CreateMedicalCenter;
@@ -7,7 +6,7 @@ namespace SamplVSSkill.Features.MedicalCenters.CreateMedicalCenter;
 // ── Request / Response ──────────────────────────────────────────
 public record CreateMedicalCenterCommand(
     string Name,
-    MedicalCenterType? Type,
+    int? TypeId,
     string? Address,
     string? Phone,
     bool IsActive,
@@ -17,7 +16,8 @@ public record CreateMedicalCenterCommand(
 public record CreateMedicalCenterResponse(
     Guid Id,
     string Name,
-    MedicalCenterType? Type,
+    int? TypeId,
+    string? TypeName,
     string? Address,
     string? Phone,
     bool IsActive,
@@ -42,7 +42,7 @@ public class CreateMedicalCenterCommandHandler
         {
             Id        = Guid.CreateVersion7(),
             Name      = command.Name,
-            Type      = command.Type,
+            TypeId    = command.TypeId,
             Address   = command.Address,
             Phone     = command.Phone,
             IsActive  = command.IsActive,
@@ -56,7 +56,8 @@ public class CreateMedicalCenterCommandHandler
         await _db.SaveChangesAsync(ct);
 
         return new CreateMedicalCenterResponse(
-            center.Id, center.Name, center.Type,
+            center.Id, center.Name,
+            center.TypeId, center.CenterType?.Name,
             center.Address, center.Phone, center.IsActive,
             center.Latitude, center.Longitude,
             center.CreatedAt, center.UpdatedAt);

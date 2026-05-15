@@ -1,5 +1,4 @@
 using Dapper;
-using SamplVSSkill.Domain.Enums;
 using SamplVSSkill.Infrastructure.Persistence;
 
 namespace SamplVSSkill.Features.MedicalCenters.GetMedicalCenter;
@@ -8,7 +7,8 @@ namespace SamplVSSkill.Features.MedicalCenters.GetMedicalCenter;
 public record GetMedicalCenterResponse(
     Guid Id,
     string Name,
-    MedicalCenterType? Type,
+    int? TypeId,
+    string? TypeName,
     string? Address,
     string? Phone,
     bool IsActive,
@@ -30,18 +30,20 @@ public class GetMedicalCenterQueryHandler
         using var connection = _connectionFactory.CreateConnection();
 
         const string sql = """
-            SELECT id         AS Id,
-                   name       AS Name,
-                   type       AS Type,
-                   address    AS Address,
-                   phone      AS Phone,
-                   is_active  AS IsActive,
-                   latitude   AS Latitude,
-                   longitude  AS Longitude,
-                   created_at AS CreatedAt,
-                   updated_at AS UpdatedAt
-            FROM medical_centers
-            WHERE id = @Id
+            SELECT mc.id         AS Id,
+                   mc.name       AS Name,
+                   mc.type_id    AS TypeId,
+                   ct.name       AS TypeName,
+                   mc.address    AS Address,
+                   mc.phone      AS Phone,
+                   mc.is_active  AS IsActive,
+                   mc.latitude   AS Latitude,
+                   mc.longitude  AS Longitude,
+                   mc.created_at AS CreatedAt,
+                   mc.updated_at AS UpdatedAt
+            FROM medical_centers mc
+            LEFT JOIN centers_type ct ON ct.id = mc.type_id
+            WHERE mc.id = @Id
             """;
 
         return await connection.QueryFirstOrDefaultAsync<GetMedicalCenterResponse>(

@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using SamplVSSkill.Domain.Enums;
 using SamplVSSkill.Infrastructure.Persistence;
 
 namespace SamplVSSkill.Features.MedicalCenters.UpdateMedicalCenter;
@@ -7,7 +6,7 @@ namespace SamplVSSkill.Features.MedicalCenters.UpdateMedicalCenter;
 // ── Request / Response ──────────────────────────────────────────
 public record UpdateMedicalCenterCommand(
     string Name,
-    MedicalCenterType? Type,
+    int? TypeId,
     string? Address,
     string? Phone,
     bool IsActive,
@@ -17,7 +16,8 @@ public record UpdateMedicalCenterCommand(
 public record UpdateMedicalCenterResponse(
     Guid Id,
     string Name,
-    MedicalCenterType? Type,
+    int? TypeId,
+    string? TypeName,
     string? Address,
     string? Phone,
     bool IsActive,
@@ -36,13 +36,15 @@ public class UpdateMedicalCenterCommandHandler
     public async Task<UpdateMedicalCenterResponse?> HandleAsync(
         Guid id, UpdateMedicalCenterCommand command, CancellationToken ct)
     {
-        var center = await _db.MedicalCenters.FirstOrDefaultAsync(c => c.Id == id, ct);
+        var center = await _db.MedicalCenters
+            .Include(c => c.CenterType)
+            .FirstOrDefaultAsync(c => c.Id == id, ct);
 
         if (center is null)
             return null;
 
         center.Name      = command.Name;
-        center.Type      = command.Type;
+        center.TypeId    = command.TypeId;
         center.Address   = command.Address;
         center.Phone     = command.Phone;
         center.IsActive  = command.IsActive;
@@ -54,7 +56,8 @@ public class UpdateMedicalCenterCommandHandler
         await _db.SaveChangesAsync(ct);
 
         return new UpdateMedicalCenterResponse(
-            center.Id, center.Name, center.Type,
+            center.Id, center.Name,
+            center.TypeId, center.CenterType?.Name,
             center.Address, center.Phone, center.IsActive,
             center.Latitude, center.Longitude,
             center.CreatedAt, center.UpdatedAt);
