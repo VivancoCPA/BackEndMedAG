@@ -5,7 +5,7 @@ using SamplVSSkill.Infrastructure.Persistence;
 namespace SamplVSSkill.Features.Specialties.UpdateSpecialty;
 
 // ── Request / Response ──────────────────────────────────────────
-public record UpdateSpecialtyCommand(string Name);
+public record UpdateSpecialtyCommand(string Name,bool IsActive);
 public record UpdateSpecialtyResponse(int Id, string Name, bool IsActive, DateTime CreatedAt);
 
 // ── Validator ───────────────────────────────────────────────────
@@ -33,6 +33,7 @@ public class UpdateSpecialtyCommandHandler
         if (specialty is null) return null;
 
         specialty.Name = command.Name;
+        specialty.IsActive  = command.IsActive;
         await _db.SaveChangesAsync(ct);
 
         return new UpdateSpecialtyResponse(

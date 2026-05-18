@@ -5,7 +5,7 @@ using SamplVSSkill.Infrastructure.Persistence;
 namespace SamplVSSkill.Features.CenterTypes.UpdateCenterType;
 
 // ── Request / Response ──────────────────────────────────────────
-public record UpdateCenterTypeCommand(string Name);
+public record UpdateCenterTypeCommand(string Name, bool IsActive);
 public record UpdateCenterTypeResponse(int Id, string Name, bool IsActive, DateTime CreatedAt, DateTime UpdatedAt);
 
 // ── Validator ───────────────────────────────────────────────────
@@ -33,6 +33,7 @@ public class UpdateCenterTypeCommandHandler
         if (centerType is null) return null;
 
         centerType.Name = command.Name;
+        centerType.IsActive = command.IsActive;
         // UpdatedAt set automatically by AppDbContext.SaveChangesAsync
 
         await _db.SaveChangesAsync(ct);

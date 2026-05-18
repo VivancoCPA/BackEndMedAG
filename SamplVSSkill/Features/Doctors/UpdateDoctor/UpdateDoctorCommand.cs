@@ -4,6 +4,11 @@ using SamplVSSkill.Infrastructure.Persistence;
 namespace SamplVSSkill.Features.Doctors.UpdateDoctor;
 
 // ── Request / Response ──────────────────────────────────────────
+public record DoctorAffiliationRequest(
+    Guid CenterId,
+    string? OfficeNumber,
+    string? WorkSchedule);
+
 public record UpdateDoctorCommand(
     string Name,
     string LastName,
@@ -13,7 +18,8 @@ public record UpdateDoctorCommand(
     string? Email,
     string? PhotoUrl,
     bool IsVet,
-    bool IsActive);
+    bool IsActive,
+    List<DoctorAffiliationRequest>? Affiliations);
 
 public record UpdateDoctorResponse(
     Guid Id,
@@ -52,6 +58,33 @@ public class UpdateDoctorCommandHandler
         doctor.IsVet       = command.IsVet;
         doctor.IsActive    = command.IsActive;
         // UpdatedAt set automatically by AppDbContext.SaveChangesAsync
+
+        var existingAffiliations = await _db.DoctorAffiliations.Where(a => a.DoctorId == doctor.Id).ToListAsync(ct);
+        var requestedCenters = command.Affiliations ?? new List<DoctorAffiliationRequest>();
+
+        var toRemove = existingAffiliations.Where(e => !requestedCenters.Any(r => r.CenterId == e.CenterId)).ToList();
+        _db.DoctorAffiliations.RemoveRange(toRemove);
+
+        foreach (var req in requestedCenters)
+        {
+            var existing = existingAffiliations.FirstOrDefault(e => e.CenterId == req.CenterId);
+            if (existing != null)
+            {
+                existing.OfficeNumber = req.OfficeNumber;
+                existing.WorkSchedule = req.WorkSchedule;
+            }
+            else
+            {
+                _db.DoctorAffiliations.Add(new SamplVSSkill.Domain.Entities.DoctorAffiliation
+                {
+                    DoctorId = doctor.Id,
+                    CenterId = req.CenterId,
+                    OfficeNumber = req.OfficeNumber,
+                    WorkSchedule = req.WorkSchedule,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
 
         await _db.SaveChangesAsync(ct);
 

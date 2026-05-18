@@ -70,11 +70,12 @@ Table medical_centers {
 }
 
 Table doctor_affiliations {
-  id serial [pk]
+  id int [pk]
   doctor_id uuid [ref: > doctors.id]
   center_id uuid [ref: > medical_centers.id]
   office_number varchar
   work_schedule text
+  created_at timestamp [default: `now()`]
   
   Indexes {
     (doctor_id, center_id) [unique]

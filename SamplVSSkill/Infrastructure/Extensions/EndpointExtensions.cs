@@ -38,9 +38,18 @@ using SamplVSSkill.Features.Doctors.GetDoctor;
 using SamplVSSkill.Features.Doctors.ListDoctors;
 using SamplVSSkill.Features.Doctors.UpdateDoctor;
 using SamplVSSkill.Features.Doctors.DeleteDoctor;
+using SamplVSSkill.Features.Doctors.LookupDoctors;
+using SamplVSSkill.Features.Doctors.PagedDoctors;
+using SamplVSSkill.Features.Doctors.SummaryDoctors;
+using SamplVSSkill.Features.Doctors.ToggleDoctorStatus;
+using SamplVSSkill.Features.DoctorAffiliations.CreateDoctorAffiliation;
+using SamplVSSkill.Features.DoctorAffiliations.ListDoctorAffiliations;
+using SamplVSSkill.Features.DoctorAffiliations.UpdateDoctorAffiliation;
+using SamplVSSkill.Features.DoctorAffiliations.DeleteDoctorAffiliation;
 using SamplVSSkill.Features.MedicalCenters.CreateMedicalCenter;
 using SamplVSSkill.Features.MedicalCenters.GetMedicalCenter;
 using SamplVSSkill.Features.MedicalCenters.ListMedicalCenters;
+using SamplVSSkill.Features.MedicalCenters.LookupMedicalCenters;
 using SamplVSSkill.Features.MedicalCenters.PagedMedicalCenters;
 using SamplVSSkill.Features.MedicalCenters.SummaryMedicalCenters;
 using SamplVSSkill.Features.MedicalCenters.UpdateMedicalCenter;
@@ -111,17 +120,28 @@ public static class EndpointExtensions
         CreateDoctorEndpoint.Map(app);
         GetDoctorEndpoint.Map(app);
         ListDoctorsEndpoint.Map(app);
+        LookupDoctorsEndpoint.Map(app);
+        PagedDoctorsEndpoint.Map(app);
+        SummaryDoctorsEndpoint.Map(app);
         UpdateDoctorEndpoint.Map(app);
         DeleteDoctorEndpoint.Map(app);
+        ToggleDoctorStatusEndpoint.Map(app);
 
         // ── Medical Centers ──
         CreateMedicalCenterEndpoint.Map(app);
         GetMedicalCenterEndpoint.Map(app);
         ListMedicalCentersEndpoint.Map(app);
+        LookupMedicalCentersEndpoint.Map(app);
         PagedMedicalCentersEndpoint.Map(app);
         SummaryMedicalCentersEndpoint.Map(app);
         UpdateMedicalCenterEndpoint.Map(app);
         DeleteMedicalCenterEndpoint.Map(app);
+
+        // ── Doctor Affiliations ──
+        CreateDoctorAffiliationEndpoint.Map(app);
+        ListDoctorAffiliationsEndpoint.Map(app);
+        UpdateDoctorAffiliationEndpoint.Map(app);
+        DeleteDoctorAffiliationEndpoint.Map(app);
 
         return app;
     }
@@ -186,17 +206,28 @@ public static class EndpointExtensions
         services.AddScoped<CreateDoctorCommandHandler>();
         services.AddScoped<GetDoctorQueryHandler>();
         services.AddScoped<ListDoctorsQueryHandler>();
+        services.AddScoped<LookupDoctorsQueryHandler>();
+        services.AddScoped<PagedDoctorsQueryHandler>();
+        services.AddScoped<SummaryDoctorsQueryHandler>();
         services.AddScoped<UpdateDoctorCommandHandler>();
         services.AddScoped<DeleteDoctorCommandHandler>();
+        services.AddScoped<ToggleDoctorStatusCommandHandler>();
 
         // ── Medical Centers ──
         services.AddScoped<CreateMedicalCenterCommandHandler>();
         services.AddScoped<GetMedicalCenterQueryHandler>();
         services.AddScoped<ListMedicalCentersQueryHandler>();
+        services.AddScoped<LookupMedicalCentersQueryHandler>();
         services.AddScoped<PagedMedicalCentersQueryHandler>();
         services.AddScoped<SummaryMedicalCentersQueryHandler>();
         services.AddScoped<UpdateMedicalCenterCommandHandler>();
         services.AddScoped<DeleteMedicalCenterCommandHandler>();
+
+        // ── Doctor Affiliations ──
+        services.AddScoped<CreateDoctorAffiliationCommandHandler>();
+        services.AddScoped<ListDoctorAffiliationsQueryHandler>();
+        services.AddScoped<UpdateDoctorAffiliationCommandHandler>();
+        services.AddScoped<DeleteDoctorAffiliationCommandHandler>();
 
         return services;
     }

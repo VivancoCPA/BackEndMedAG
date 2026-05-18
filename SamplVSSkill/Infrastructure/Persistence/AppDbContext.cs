@@ -18,6 +18,7 @@ public class AppDbContext : IdentityDbContext
     public DbSet<Specialty> Specialties => Set<Specialty>();
     public DbSet<Insurer> Insurers => Set<Insurer>();
     public DbSet<CenterType> CenterTypes => Set<CenterType>();
+    public DbSet<DoctorAffiliation> DoctorAffiliations => Set<DoctorAffiliation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -116,6 +117,32 @@ public class AppDbContext : IdentityDbContext
             entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        // ── DoctorAffiliation ───────────────────────────────────
+        modelBuilder.Entity<DoctorAffiliation>(entity =>
+        {
+            entity.ToTable("doctor_affiliations");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            entity.Property(e => e.DoctorId).HasColumnName("doctor_id").IsRequired();
+            entity.Property(e => e.CenterId).HasColumnName("center_id").IsRequired();
+            entity.Property(e => e.OfficeNumber).HasColumnName("office_number");
+            entity.Property(e => e.WorkSchedule).HasColumnName("work_schedule");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+
+            // Unique index
+            entity.HasIndex(e => new { e.DoctorId, e.CenterId }).IsUnique();
+
+            entity.HasOne(e => e.Doctor)
+                  .WithMany()
+                  .HasForeignKey(e => e.DoctorId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.MedicalCenter)
+                  .WithMany()
+                  .HasForeignKey(e => e.CenterId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

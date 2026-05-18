@@ -7,8 +7,8 @@ public static class ListDoctorsEndpoint
            .WithTags("Doctors")
            .WithName("ListDoctors")
            .Produces<IEnumerable<ListDoctorsResponse>>()
-           .Produces(StatusCodes.Status401Unauthorized)
-           .RequireAuthorization();
+           .Produces(StatusCodes.Status401Unauthorized);
+           //.RequireAuthorization();
 
     private static async Task<IResult> Handle(
         ListDoctorsQueryHandler handler,

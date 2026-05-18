@@ -4,6 +4,11 @@ using SamplVSSkill.Infrastructure.Persistence;
 namespace SamplVSSkill.Features.Doctors.CreateDoctor;
 
 // ── Request / Response ──────────────────────────────────────────
+public record DoctorAffiliationRequest(
+    Guid CenterId,
+    string? OfficeNumber,
+    string? WorkSchedule);
+
 public record CreateDoctorCommand(
     string Name,
     string LastName,
@@ -12,7 +17,8 @@ public record CreateDoctorCommand(
     string? Phone,
     string? Email,
     string? PhotoUrl,
-    bool IsVet);
+    bool IsVet,
+    List<DoctorAffiliationRequest>? Affiliations);
 
 public record CreateDoctorResponse(
     Guid Id,
@@ -56,6 +62,22 @@ public class CreateDoctorCommandHandler
         };
 
         _db.Doctors.Add(doctor);
+
+        if (command.Affiliations?.Any() == true)
+        {
+            foreach (var aff in command.Affiliations)
+            {
+                _db.DoctorAffiliations.Add(new DoctorAffiliation
+                {
+                    DoctorId = doctor.Id,
+                    CenterId = aff.CenterId,
+                    OfficeNumber = aff.OfficeNumber,
+                    WorkSchedule = aff.WorkSchedule,
+                    CreatedAt = now
+                });
+            }
+        }
+
         await _db.SaveChangesAsync(ct);
 
         return new CreateDoctorResponse(
