@@ -5,7 +5,7 @@ namespace SamplVSSkill.Features.Doctors.CreateDoctor;
 
 // ── Request / Response ──────────────────────────────────────────
 public record DoctorAffiliationRequest(
-    Guid CenterId,
+    Guid Id,
     string? OfficeNumber,
     string? WorkSchedule);
 
@@ -18,7 +18,7 @@ public record CreateDoctorCommand(
     string? Email,
     string? PhotoUrl,
     bool IsVet,
-    List<DoctorAffiliationRequest>? Affiliations);
+    List<DoctorAffiliationRequest>? Centers);
 
 public record CreateDoctorResponse(
     Guid Id,
@@ -63,14 +63,14 @@ public class CreateDoctorCommandHandler
 
         _db.Doctors.Add(doctor);
 
-        if (command.Affiliations?.Any() == true)
+        if (command.Centers?.Any() == true)
         {
-            foreach (var aff in command.Affiliations)
+            foreach (var aff in command.Centers)
             {
                 _db.DoctorAffiliations.Add(new DoctorAffiliation
                 {
                     DoctorId = doctor.Id,
-                    CenterId = aff.CenterId,
+                    CenterId = aff.Id,
                     OfficeNumber = aff.OfficeNumber,
                     WorkSchedule = aff.WorkSchedule,
                     CreatedAt = now

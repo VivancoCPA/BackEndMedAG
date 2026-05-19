@@ -5,7 +5,7 @@ namespace SamplVSSkill.Features.Doctors.UpdateDoctor;
 
 // ── Request / Response ──────────────────────────────────────────
 public record DoctorAffiliationRequest(
-    Guid CenterId,
+    Guid Id,
     string? OfficeNumber,
     string? WorkSchedule);
 
@@ -19,7 +19,7 @@ public record UpdateDoctorCommand(
     string? PhotoUrl,
     bool IsVet,
     bool IsActive,
-    List<DoctorAffiliationRequest>? Affiliations);
+    List<DoctorAffiliationRequest>? Centers);
 
 public record UpdateDoctorResponse(
     Guid Id,
@@ -60,14 +60,14 @@ public class UpdateDoctorCommandHandler
         // UpdatedAt set automatically by AppDbContext.SaveChangesAsync
 
         var existingAffiliations = await _db.DoctorAffiliations.Where(a => a.DoctorId == doctor.Id).ToListAsync(ct);
-        var requestedCenters = command.Affiliations ?? new List<DoctorAffiliationRequest>();
+        var requestedCenters = command.Centers ?? new List<DoctorAffiliationRequest>();
 
-        var toRemove = existingAffiliations.Where(e => !requestedCenters.Any(r => r.CenterId == e.CenterId)).ToList();
+        var toRemove = existingAffiliations.Where(e => !requestedCenters.Any(r => r.Id == e.CenterId)).ToList();
         _db.DoctorAffiliations.RemoveRange(toRemove);
 
         foreach (var req in requestedCenters)
         {
-            var existing = existingAffiliations.FirstOrDefault(e => e.CenterId == req.CenterId);
+            var existing = existingAffiliations.FirstOrDefault(e => e.CenterId == req.Id);
             if (existing != null)
             {
                 existing.OfficeNumber = req.OfficeNumber;
@@ -78,7 +78,7 @@ public class UpdateDoctorCommandHandler
                 _db.DoctorAffiliations.Add(new SamplVSSkill.Domain.Entities.DoctorAffiliation
                 {
                     DoctorId = doctor.Id,
-                    CenterId = req.CenterId,
+                    CenterId = req.Id,
                     OfficeNumber = req.OfficeNumber,
                     WorkSchedule = req.WorkSchedule,
                     CreatedAt = DateTime.UtcNow

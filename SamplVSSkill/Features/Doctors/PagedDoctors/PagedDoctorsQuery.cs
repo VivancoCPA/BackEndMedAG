@@ -44,12 +44,13 @@ public class PagedDoctorsQueryHandler
     private static readonly Dictionary<string, string> AllowedSortColumns =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["name"]       = "d.name",
-            ["lastname"]   = "d.last_name",
-            ["email"]      = "d.email",
-            ["isactive"]   = "d.is_active",
-            ["created_at"] = "d.created_at",
-            ["updated_at"] = "d.updated_at"
+            ["name"]          = "d.name",
+            ["lastname"]      = "d.last_name",
+            ["specialtyname"] = "s.name",
+            ["email"]         = "d.email",
+            ["isactive"]      = "d.is_active",
+            ["created_at"]    = "d.created_at",
+            ["updated_at"]    = "d.updated_at"
         };
 
     public PagedDoctorsQueryHandler(DapperConnectionFactory connectionFactory) =>
@@ -66,7 +67,7 @@ public class PagedDoctorsQueryHandler
         var where      = BuildWhereClause(queryParams);
         var orderBy    = BuildOrderByClause(queryParams);
 
-        var countSql = $"SELECT COUNT(*) FROM doctors d {where}";
+        var countSql = $"SELECT COUNT(*) FROM doctors d LEFT JOIN specialties s ON d.specialty_id = s.id {where}";
         var dataSql  = BuildDataSql(where, orderBy, pageSize, offset);
 
         using var connection = _connectionFactory.CreateConnection();
@@ -117,6 +118,7 @@ public class PagedDoctorsQueryHandler
                  OR d.last_name ILIKE @Search
                  OR d.email ILIKE @Search
                  OR d.register ILIKE @Search
+                 OR s.name ILIKE @Search
               """;
 
     private static string BuildOrderByClause(PagedDoctorsParams p)
@@ -130,6 +132,7 @@ public class PagedDoctorsQueryHandler
         WITH paged AS (
             SELECT d.id
             FROM doctors d
+            LEFT JOIN specialties s ON d.specialty_id = s.id
             {where}
             {orderBy}
             LIMIT {pageSize} OFFSET {offset}
