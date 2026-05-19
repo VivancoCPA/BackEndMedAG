@@ -9,7 +9,7 @@ namespace SamplVSSkill.Infrastructure.Persistence;
 /// EF Core DbContext used for Commands (INSERT, UPDATE, DELETE) and Identity management.
 /// Queries (SELECT) are handled by Dapper via DapperConnectionFactory.
 /// </summary>
-public class AppDbContext : IdentityDbContext
+public class AppDbContext : IdentityDbContext<AppUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -23,6 +23,21 @@ public class AppDbContext : IdentityDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // ── AppUser (Identity extended user) ─────────────────────
+        modelBuilder.Entity<AppUser>(entity =>
+        {
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(100);
+            entity.Property(e => e.LastName).HasColumnName("last_name").HasMaxLength(100);
+            entity.Property(e => e.DateOfBirth).HasColumnName("date_of_birth");
+            entity.Property(e => e.InsurerId).HasColumnName("insurer_id");
+
+            entity.HasOne(e => e.Insurer)
+                  .WithMany()
+                  .HasForeignKey(e => e.InsurerId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
 
         // ── CenterType ───────────────────────────────────────
         modelBuilder.Entity<CenterType>(entity =>

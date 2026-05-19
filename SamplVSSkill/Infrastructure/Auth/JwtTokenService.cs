@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using SamplVSSkill.Domain.Entities;
 
 namespace SamplVSSkill.Infrastructure.Auth;
 
@@ -27,12 +28,14 @@ public sealed class JwtTokenService
         _expirationMinutes = int.Parse(jwtSection["ExpirationMinutes"] ?? "60");
     }
 
-    public string GenerateToken(IdentityUser user)
+    public string GenerateToken(AppUser user)
     {
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id),
             new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+            new(JwtRegisteredClaimNames.GivenName, user.Name),
+            new(JwtRegisteredClaimNames.FamilyName, user.LastName),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

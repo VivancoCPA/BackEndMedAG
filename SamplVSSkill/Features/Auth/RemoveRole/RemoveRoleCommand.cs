@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using SamplVSSkill.Domain.Entities;
 
 namespace SamplVSSkill.Features.Auth.RemoveRole;
 
@@ -8,9 +9,9 @@ public record RemoveRoleResponse(string UserId, string Email, IList<string> Rema
 // ── Command Handler ─────────────────────────────────────────────
 public class RemoveRoleCommandHandler
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<AppUser> _userManager;
 
-    public RemoveRoleCommandHandler(UserManager<IdentityUser> userManager) =>
+    public RemoveRoleCommandHandler(UserManager<AppUser> userManager) =>
         _userManager = userManager;
 
     public async Task<IResult> HandleAsync(string userId, string roleName, CancellationToken ct)

@@ -1,5 +1,8 @@
 using SamplVSSkill.Features.Auth.Register;
 using SamplVSSkill.Features.Auth.Login;
+using SamplVSSkill.Features.Auth.ChangePassword;
+using SamplVSSkill.Features.Auth.ForgotPassword;
+using SamplVSSkill.Features.Auth.ResetPassword;
 using SamplVSSkill.Features.Auth.CreateRole;
 using SamplVSSkill.Features.Auth.ListRoles;
 using SamplVSSkill.Features.Auth.DeleteRole;
@@ -8,6 +11,7 @@ using SamplVSSkill.Features.Auth.RemoveRole;
 using SamplVSSkill.Features.Auth.GetUserRoles;
 using SamplVSSkill.Features.Auth.ListUsers;
 using SamplVSSkill.Features.Auth.GetUser;
+using SamplVSSkill.Features.Auth.UpdateUser;
 using SamplVSSkill.Features.Auth.ToggleUserStatus;
 using SamplVSSkill.Features.Auth.AssignClaim;
 using SamplVSSkill.Features.Auth.RemoveClaim;
@@ -68,6 +72,9 @@ public static class EndpointExtensions
         // ── Auth (public) ──
         RegisterEndpoint.Map(app);
         LoginEndpoint.Map(app);
+        ForgotPasswordEndpoint.Map(app);
+        ResetPasswordEndpoint.Map(app);
+        ChangePasswordEndpoint.Map(app);
 
         // ── Roles ──
         CreateRoleEndpoint.Map(app);
@@ -82,6 +89,7 @@ public static class EndpointExtensions
         // ── Users ──
         ListUsersEndpoint.Map(app);
         GetUserEndpoint.Map(app);
+        UpdateUserEndpoint.Map(app);
         ToggleUserStatusEndpoint.Map(app);
 
         // ── Claims ──
@@ -154,6 +162,9 @@ public static class EndpointExtensions
         // ── Auth ──
         services.AddScoped<RegisterCommandHandler>();
         services.AddScoped<LoginCommandHandler>();
+        services.AddScoped<ChangePasswordCommandHandler>();
+        services.AddScoped<ForgotPasswordCommandHandler>();
+        services.AddScoped<ResetPasswordCommandHandler>();
 
         // ── Roles ──
         services.AddScoped<CreateRoleCommandHandler>();
@@ -168,6 +179,7 @@ public static class EndpointExtensions
         // ── Users ──
         services.AddScoped<ListUsersQueryHandler>();
         services.AddScoped<GetUserQueryHandler>();
+        services.AddScoped<UpdateUserCommandHandler>();
         services.AddScoped<ToggleUserStatusCommandHandler>();
 
         // ── Claims ──

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using SamplVSSkill.Domain.Entities;
 
 namespace SamplVSSkill.Features.Auth.ListUsers;
 
@@ -6,6 +7,10 @@ namespace SamplVSSkill.Features.Auth.ListUsers;
 public record ListUsersResponse(
     string Id,
     string Email,
+    string Name,
+    string LastName,
+    DateTime? DateOfBirth,
+    Guid? InsurerId,
     bool EmailConfirmed,
     bool IsLockedOut,
     DateTimeOffset? LockoutEnd);
@@ -13,9 +18,9 @@ public record ListUsersResponse(
 // ── Query Handler ───────────────────────────────────────────────
 public class ListUsersQueryHandler
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<AppUser> _userManager;
 
-    public ListUsersQueryHandler(UserManager<IdentityUser> userManager) =>
+    public ListUsersQueryHandler(UserManager<AppUser> userManager) =>
         _userManager = userManager;
 
     public Task<IEnumerable<ListUsersResponse>> HandleAsync(CancellationToken ct)
@@ -26,6 +31,10 @@ public class ListUsersQueryHandler
             .Select(u => new ListUsersResponse(
                 u.Id,
                 u.Email!,
+                u.Name,
+                u.LastName,
+                u.DateOfBirth,
+                u.InsurerId,
                 u.EmailConfirmed,
                 u.LockoutEnd != null && u.LockoutEnd > now,
                 u.LockoutEnd))

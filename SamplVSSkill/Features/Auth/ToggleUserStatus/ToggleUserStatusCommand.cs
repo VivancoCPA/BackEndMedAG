@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using SamplVSSkill.Domain.Entities;
 
 namespace SamplVSSkill.Features.Auth.ToggleUserStatus;
 
@@ -12,9 +13,9 @@ public record ToggleUserStatusResponse(
 // ── Command Handler ─────────────────────────────────────────────
 public class ToggleUserStatusCommandHandler
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<AppUser> _userManager;
 
-    public ToggleUserStatusCommandHandler(UserManager<IdentityUser> userManager) =>
+    public ToggleUserStatusCommandHandler(UserManager<AppUser> userManager) =>
         _userManager = userManager;
 
     public async Task<IResult> HandleAsync(string userId, CancellationToken ct)

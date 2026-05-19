@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using SamplVSSkill.Domain.Entities;
 
 namespace SamplVSSkill.Features.Auth.GetUserRoles;
 
@@ -8,9 +9,9 @@ public record GetUserRolesResponse(string UserId, string Email, IList<string> Ro
 // ── Query Handler ───────────────────────────────────────────────
 public class GetUserRolesQueryHandler
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<AppUser> _userManager;
 
-    public GetUserRolesQueryHandler(UserManager<IdentityUser> userManager) =>
+    public GetUserRolesQueryHandler(UserManager<AppUser> userManager) =>
         _userManager = userManager;
 
     public async Task<IResult> HandleAsync(string userId, CancellationToken ct)

@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
+using SamplVSSkill.Domain.Entities;
 using System.Security.Claims;
 
 namespace SamplVSSkill.Features.Auth.AssignClaim;
@@ -26,9 +27,9 @@ public class AssignClaimValidator : AbstractValidator<AssignClaimCommand>
 // ── Command Handler ─────────────────────────────────────────────
 public class AssignClaimCommandHandler
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<AppUser> _userManager;
 
-    public AssignClaimCommandHandler(UserManager<IdentityUser> userManager) =>
+    public AssignClaimCommandHandler(UserManager<AppUser> userManager) =>
         _userManager = userManager;
 
     public async Task<IResult> HandleAsync(string userId, AssignClaimCommand command, CancellationToken ct)

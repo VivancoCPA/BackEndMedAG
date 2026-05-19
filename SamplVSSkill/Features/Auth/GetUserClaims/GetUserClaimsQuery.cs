@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using SamplVSSkill.Domain.Entities;
 
 namespace SamplVSSkill.Features.Auth.GetUserClaims;
 
@@ -9,9 +10,9 @@ public record GetUserClaimsResponse(string UserId, string Email, IList<ClaimItem
 // ── Query Handler ───────────────────────────────────────────────
 public class GetUserClaimsQueryHandler
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<AppUser> _userManager;
 
-    public GetUserClaimsQueryHandler(UserManager<IdentityUser> userManager) =>
+    public GetUserClaimsQueryHandler(UserManager<AppUser> userManager) =>
         _userManager = userManager;
 
     public async Task<IResult> HandleAsync(string userId, CancellationToken ct)

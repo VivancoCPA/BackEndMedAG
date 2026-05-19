@@ -7,8 +7,8 @@ public static class ListUsersEndpoint
            .WithTags("Users")
            .WithName("ListUsers")
            .Produces<IEnumerable<ListUsersResponse>>()
-           .Produces(StatusCodes.Status401Unauthorized)
-           .RequireAuthorization();
+           .Produces(StatusCodes.Status401Unauthorized);
+           //.RequireAuthorization();
 
     private static async Task<IResult> Handle(
         ListUsersQueryHandler handler,

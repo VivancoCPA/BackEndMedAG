@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using SamplVSSkill.Domain.Entities;
 using SamplVSSkill.Infrastructure.Auth;
 using SamplVSSkill.Infrastructure.Persistence;
+using SamplVSSkill.Infrastructure.Services;
 
 namespace SamplVSSkill.Infrastructure.Extensions;
 
@@ -23,9 +25,20 @@ public static class ServiceCollectionExtensions
             options.UseNpgsql(connectionString));
 
         // ── Identity ──
-        services.AddIdentityCore<IdentityUser>()
+        services.AddIdentityCore<AppUser>(options =>
+            {
+                options.User.RequireUniqueEmail      = true;
+
+                // ── Password Rules ──
+                options.Password.RequireNonAlphanumeric = true;  // Ej: *, @, !
+                options.Password.RequireUppercase        = true;  // Al menos una mayúscula
+                options.Password.RequireLowercase        = true;  // Al menos una minúscula
+                options.Password.RequireDigit            = true;  // Al menos un dígito (0-9)
+                options.Password.RequiredLength          = 8;     // Mínimo 8 caracteres
+            })
             .AddRoles<IdentityRole>()                          // enables RoleManager<IdentityRole>
-            .AddEntityFrameworkStores<AppDbContext>();
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders();                       // enables password reset tokens
 
         // ── JWT Authentication ──
         var jwtSection = configuration.GetSection("Jwt");
@@ -43,7 +56,8 @@ public static class ServiceCollectionExtensions
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtSection["Issuer"],
                     ValidAudience = jwtSection["Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(key)
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ClockSkew = TimeSpan.Zero
                 };
             });
 
@@ -51,6 +65,9 @@ public static class ServiceCollectionExtensions
 
         // ── JWT Token Service ──
         services.AddSingleton<JwtTokenService>();
+
+        // ── Email Service (development logger; swap for production SMTP) ──
+        services.AddScoped<IEmailService, LoggerEmailService>();
 
         // ── Dapper (Queries: SELECT) ──
         services.AddSingleton(new DapperConnectionFactory(connectionString));

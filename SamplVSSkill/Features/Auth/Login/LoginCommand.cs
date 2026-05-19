@@ -1,12 +1,13 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
+using SamplVSSkill.Domain.Entities;
 using SamplVSSkill.Infrastructure.Auth;
 
 namespace SamplVSSkill.Features.Auth.Login;
 
 // ── Request / Response ──────────────────────────────────────────
 public record LoginCommand(string Email, string Password);
-public record LoginResponse(string Token, string Email);
+public record LoginResponse(string Token, string Email, string Name, string LastName);
 
 // ── Validator ───────────────────────────────────────────────────
 public class LoginValidator : AbstractValidator<LoginCommand>
@@ -25,10 +26,10 @@ public class LoginValidator : AbstractValidator<LoginCommand>
 // ── Command Handler ─────────────────────────────────────────────
 public class LoginCommandHandler
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<AppUser> _userManager;
     private readonly JwtTokenService _jwtService;
 
-    public LoginCommandHandler(UserManager<IdentityUser> userManager, JwtTokenService jwtService)
+    public LoginCommandHandler(UserManager<AppUser> userManager, JwtTokenService jwtService)
     {
         _userManager = userManager;
         _jwtService = jwtService;
@@ -46,6 +47,6 @@ public class LoginCommandHandler
         }
 
         var token = _jwtService.GenerateToken(user);
-        return Results.Ok(new LoginResponse(token, user.Email!));
+        return Results.Ok(new LoginResponse(token, user.Email!, user.Name, user.LastName));
     }
 }

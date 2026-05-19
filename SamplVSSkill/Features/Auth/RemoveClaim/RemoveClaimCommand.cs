@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using SamplVSSkill.Domain.Entities;
 using System.Security.Claims;
 
 namespace SamplVSSkill.Features.Auth.RemoveClaim;
@@ -11,9 +12,9 @@ public record RemoveClaimResponse(string UserId, string Email, string Message);
 // ── Command Handler ─────────────────────────────────────────────
 public class RemoveClaimCommandHandler
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<AppUser> _userManager;
 
-    public RemoveClaimCommandHandler(UserManager<IdentityUser> userManager) =>
+    public RemoveClaimCommandHandler(UserManager<AppUser> userManager) =>
         _userManager = userManager;
 
     public async Task<IResult> HandleAsync(string userId, RemoveClaimParams p, CancellationToken ct)

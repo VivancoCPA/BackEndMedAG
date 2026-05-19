@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using SamplVSSkill.Domain.Entities;
 
 namespace SamplVSSkill.Features.Auth.GetUser;
 
@@ -6,6 +7,10 @@ namespace SamplVSSkill.Features.Auth.GetUser;
 public record GetUserResponse(
     string Id,
     string Email,
+    string Name,
+    string LastName,
+    DateTime? DateOfBirth,
+    Guid? InsurerId,
     bool EmailConfirmed,
     bool IsLockedOut,
     DateTimeOffset? LockoutEnd,
@@ -15,9 +20,9 @@ public record GetUserResponse(
 // ── Query Handler ───────────────────────────────────────────────
 public class GetUserQueryHandler
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<AppUser> _userManager;
 
-    public GetUserQueryHandler(UserManager<IdentityUser> userManager) =>
+    public GetUserQueryHandler(UserManager<AppUser> userManager) =>
         _userManager = userManager;
 
     public async Task<IResult> HandleAsync(string userId, CancellationToken ct)
@@ -34,6 +39,10 @@ public class GetUserQueryHandler
         return Results.Ok(new GetUserResponse(
             Id:             user.Id,
             Email:          user.Email!,
+            Name:           user.Name,
+            LastName:       user.LastName,
+            DateOfBirth:    user.DateOfBirth,
+            InsurerId:      user.InsurerId,
             EmailConfirmed: user.EmailConfirmed,
             IsLockedOut:    user.LockoutEnd != null && user.LockoutEnd > now,
             LockoutEnd:     user.LockoutEnd,
