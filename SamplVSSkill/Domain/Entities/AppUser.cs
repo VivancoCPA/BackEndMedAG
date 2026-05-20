@@ -12,6 +12,7 @@ public class AppUser : IdentityUser
     public string Name { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
+    public string? PhotoUrl { get; set; }
 
     /// <summary>FK → insurers.id (nullable)</summary>
     public Guid? InsurerId { get; set; }

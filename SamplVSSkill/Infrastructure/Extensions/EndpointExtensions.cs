@@ -10,6 +10,7 @@ using SamplVSSkill.Features.Auth.AssignRole;
 using SamplVSSkill.Features.Auth.RemoveRole;
 using SamplVSSkill.Features.Auth.GetUserRoles;
 using SamplVSSkill.Features.Auth.ListUsers;
+using SamplVSSkill.Features.Auth.PagedUsers;
 using SamplVSSkill.Features.Auth.GetUser;
 using SamplVSSkill.Features.Auth.UpdateUser;
 using SamplVSSkill.Features.Auth.ToggleUserStatus;
@@ -88,6 +89,7 @@ public static class EndpointExtensions
 
         // ── Users ──
         ListUsersEndpoint.Map(app);
+        PagedUsersEndpoint.Map(app);
         GetUserEndpoint.Map(app);
         UpdateUserEndpoint.Map(app);
         ToggleUserStatusEndpoint.Map(app);
@@ -178,6 +180,7 @@ public static class EndpointExtensions
 
         // ── Users ──
         services.AddScoped<ListUsersQueryHandler>();
+        services.AddScoped<PagedUsersQueryHandler>();
         services.AddScoped<GetUserQueryHandler>();
         services.AddScoped<UpdateUserCommandHandler>();
         services.AddScoped<ToggleUserStatusCommandHandler>();

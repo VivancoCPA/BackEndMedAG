@@ -46,6 +46,15 @@ public class LoginCommandHandler
                 statusCode: StatusCodes.Status401Unauthorized);
         }
 
+        // Verificar si el usuario está bloqueado (solo LockoutEnd determina el bloqueo activo)
+        if (user.LockoutEnd != null && user.LockoutEnd > DateTimeOffset.UtcNow)
+        {
+            return Results.Problem(
+                title: "Usuario bloqueado",
+                detail: "Tu cuenta se encuentra bloqueada. Contacta al administrador.",
+                statusCode: StatusCodes.Status403Forbidden);
+        }
+
         var token = _jwtService.GenerateToken(user);
         return Results.Ok(new LoginResponse(token, user.Email!, user.Name, user.LastName));
     }

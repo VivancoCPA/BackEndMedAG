@@ -29,16 +29,23 @@ public class ToggleUserStatusCommandHandler
 
         if (isCurrentlyLocked)
         {
-            // Desbloquear — quitar el lockout
-            await _userManager.SetLockoutEndDateAsync(user, null);
-            return Results.Ok(new ToggleUserStatusResponse(user.Id, user.Email!, false, "Activado"));
+            // Desbloquear: limpiar LockoutEnd. LockoutEnabled se mantiene en TRUE (comportamiento correcto de Identity).
+            user.LockoutEnd = null;
         }
         else
         {
-            // Bloquear — poner lockout indefinido
-            await _userManager.SetLockoutEnabledAsync(user, true);
-            await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
-            return Results.Ok(new ToggleUserStatusResponse(user.Id, user.Email!, true, "Bloqueado"));
+            // Bloquear: poner LockoutEnd en el futuro lejano.
+            user.LockoutEnd = DateTimeOffset.MaxValue;
         }
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.ToDictionary(e => e.Code, e => new[] { e.Description });
+            return Results.ValidationProblem(errors);
+        }
+
+        var locked = user.LockoutEnd != null && user.LockoutEnd > now;
+        return Results.Ok(new ToggleUserStatusResponse(user.Id, user.Email!, locked, locked ? "Bloqueado" : "Activado"));
     }
 }

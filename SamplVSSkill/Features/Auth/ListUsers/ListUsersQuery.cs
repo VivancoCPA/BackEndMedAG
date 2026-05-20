@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Identity;
-using SamplVSSkill.Domain.Entities;
+using Dapper;
+using SamplVSSkill.Infrastructure.Persistence;
 
 namespace SamplVSSkill.Features.Auth.ListUsers;
 
@@ -9,37 +9,44 @@ public record ListUsersResponse(
     string Email,
     string Name,
     string LastName,
+    string? PhoneNumber,
     DateTime? DateOfBirth,
+    string? PhotoUrl,
     Guid? InsurerId,
+    string? InsurerName,
     bool EmailConfirmed,
-    bool IsLockedOut,
-    DateTimeOffset? LockoutEnd);
+    bool IsLockedOut);
 
-// ── Query Handler ───────────────────────────────────────────────
+// ── Query Handler (Dapper) ──────────────────────────────────────
 public class ListUsersQueryHandler
 {
-    private readonly UserManager<AppUser> _userManager;
+    private readonly DapperConnectionFactory _connectionFactory;
 
-    public ListUsersQueryHandler(UserManager<AppUser> userManager) =>
-        _userManager = userManager;
+    public ListUsersQueryHandler(DapperConnectionFactory connectionFactory) =>
+        _connectionFactory = connectionFactory;
 
-    public Task<IEnumerable<ListUsersResponse>> HandleAsync(CancellationToken ct)
+    public async Task<IEnumerable<ListUsersResponse>> HandleAsync(CancellationToken ct)
     {
-        var now = DateTimeOffset.UtcNow;
+        using var connection = _connectionFactory.CreateConnection();
 
-        var users = _userManager.Users
-            .Select(u => new ListUsersResponse(
-                u.Id,
-                u.Email!,
-                u.Name,
-                u.LastName,
-                u.DateOfBirth,
-                u.InsurerId,
-                u.EmailConfirmed,
-                u.LockoutEnd != null && u.LockoutEnd > now,
-                u.LockoutEnd))
-            .AsEnumerable();
+        const string sql = """
+            SELECT u."Id"             AS Id,
+                   u."Email"          AS Email,
+                   u."name"           AS Name,
+                   u."last_name"       AS LastName,
+                   u."PhoneNumber"    AS PhoneNumber,
+                   u."date_of_birth"  AS DateOfBirth,
+                   u."PhotoUrl"      AS PhotoUrl,
+                   u."insurer_id"     AS InsurerId,
+                   i.name             AS InsurerName,
+                   u."EmailConfirmed" AS EmailConfirmed,
+                   (u."LockoutEnd" IS NOT NULL AND u."LockoutEnd" > NOW()) AS IsLockedOut
+            FROM "AspNetUsers" u
+            LEFT JOIN insurers i ON u."insurer_id" = i.id
+            ORDER BY u."name", u."last_name"
+            """;
 
-        return Task.FromResult(users);
+        return await connection.QueryAsync<ListUsersResponse>(
+            new CommandDefinition(sql, cancellationToken: ct));
     }
 }

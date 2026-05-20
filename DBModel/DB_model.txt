@@ -12,6 +12,10 @@ Table users {
 Table family_groups {
   id uuid [pk, default: `gen_random_uuid()`]
   name varchar [not null]
+  user_id uuid [ref: > users.id]
+  created_at timestamp [default: `now()`]
+  photo_url text
+  is_active boolean [default: true]
 }
 
 Table family_memberships {

@@ -8,8 +8,8 @@ public static class ToggleUserStatusEndpoint
            .WithName("ToggleUserStatus")
            .Produces<ToggleUserStatusResponse>()
            .Produces(StatusCodes.Status404NotFound)
-           .Produces(StatusCodes.Status401Unauthorized)
-           .RequireAuthorization();
+           .Produces(StatusCodes.Status401Unauthorized);
+           //.RequireAuthorization();
 
     private static async Task<IResult> Handle(
         string userId,
