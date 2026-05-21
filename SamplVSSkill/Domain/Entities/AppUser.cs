@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Identity;
-using SamplVSSkill.Domain.Entities;
 
 namespace SamplVSSkill.Domain.Entities;
 
@@ -13,10 +12,7 @@ public class AppUser : IdentityUser
     public string LastName { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
     public string? PhotoUrl { get; set; }
-
-    /// <summary>FK → insurers.id (nullable)</summary>
-    public Guid? InsurerId { get; set; }
-
-    /// <summary>Navigation property — loaded only when included explicitly.</summary>
-    public Insurer? Insurer { get; set; }
+    public string? Address { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    // InsurerId eliminado: las aseguradoras se gestionan en user_insurances (many-to-many)
 }

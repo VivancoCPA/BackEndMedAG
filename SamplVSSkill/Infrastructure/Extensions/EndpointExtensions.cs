@@ -59,6 +59,15 @@ using SamplVSSkill.Features.MedicalCenters.PagedMedicalCenters;
 using SamplVSSkill.Features.MedicalCenters.SummaryMedicalCenters;
 using SamplVSSkill.Features.MedicalCenters.UpdateMedicalCenter;
 using SamplVSSkill.Features.MedicalCenters.DeleteMedicalCenter;
+using SamplVSSkill.Features.FamilyGroups.CreateFamilyGroup;
+using SamplVSSkill.Features.FamilyGroups.GetFamilyGroup;
+using SamplVSSkill.Features.FamilyGroups.ListFamilyGroups;
+using SamplVSSkill.Features.FamilyGroups.PagedFamilyGroups;
+using SamplVSSkill.Features.FamilyGroups.UpdateFamilyGroup;
+using SamplVSSkill.Features.FamilyGroups.ToggleFamilyGroupStatus;
+using SamplVSSkill.Features.UserInsurances.ListUserInsurances;
+using SamplVSSkill.Features.UserInsurances.AssignUserInsurance;
+using SamplVSSkill.Features.UserInsurances.RemoveUserInsurance;
 
 namespace SamplVSSkill.Infrastructure.Extensions;
 
@@ -153,6 +162,19 @@ public static class EndpointExtensions
         UpdateDoctorAffiliationEndpoint.Map(app);
         DeleteDoctorAffiliationEndpoint.Map(app);
 
+        // ── Family Groups ──
+        CreateFamilyGroupEndpoint.Map(app);
+        GetFamilyGroupEndpoint.Map(app);
+        ListFamilyGroupsEndpoint.Map(app);
+        PagedFamilyGroupsEndpoint.Map(app);
+        UpdateFamilyGroupEndpoint.Map(app);
+        ToggleFamilyGroupStatusEndpoint.Map(app);
+
+        // ── User Insurances ──
+        ListUserInsurancesEndpoint.Map(app);
+        AssignUserInsuranceEndpoint.Map(app);
+        RemoveUserInsuranceEndpoint.Map(app);
+
         return app;
     }
 
@@ -243,6 +265,19 @@ public static class EndpointExtensions
         services.AddScoped<ListDoctorAffiliationsQueryHandler>();
         services.AddScoped<UpdateDoctorAffiliationCommandHandler>();
         services.AddScoped<DeleteDoctorAffiliationCommandHandler>();
+
+        // ── Family Groups ──
+        services.AddScoped<CreateFamilyGroupCommandHandler>();
+        services.AddScoped<GetFamilyGroupQueryHandler>();
+        services.AddScoped<ListFamilyGroupsQueryHandler>();
+        services.AddScoped<PagedFamilyGroupsQueryHandler>();
+        services.AddScoped<UpdateFamilyGroupCommandHandler>();
+        services.AddScoped<ToggleFamilyGroupStatusCommandHandler>();
+
+        // ── User Insurances ──
+        services.AddScoped<ListUserInsurancesQueryHandler>();
+        services.AddScoped<AssignUserInsuranceCommandHandler>();
+        services.AddScoped<RemoveUserInsuranceCommandHandler>();
 
         return services;
     }

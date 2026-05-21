@@ -12,8 +12,7 @@ public record RegisterCommand(
     string Email,
     string Password,
     string Phone,
-    DateTime? DateOfBirth,
-    Guid? InsurerId);
+    DateTime? DateOfBirth);
 public record RegisterResponse(string Token, string Email, string Name, string LastName);
 
 // ── Validator ───────────────────────────────────────────────────
@@ -64,8 +63,7 @@ public class RegisterCommandHandler
             Name        = command.Name,
             LastName    = command.LastName,
             PhoneNumber = command.Phone,
-            DateOfBirth = command.DateOfBirth,
-            InsurerId   = command.InsurerId
+            DateOfBirth = command.DateOfBirth
         };
 
         var result = await _userManager.CreateAsync(user, command.Password);

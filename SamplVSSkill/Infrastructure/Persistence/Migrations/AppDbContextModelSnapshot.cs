@@ -162,13 +162,18 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Address")
+                        .HasColumnType("text");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("date_of_birth");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -177,15 +182,9 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid?>("InsurerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("insurer_id");
-
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("last_name");
+                        .HasColumnType("text");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
@@ -195,9 +194,7 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("name");
+                        .HasColumnType("text");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -230,8 +227,6 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("InsurerId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -379,6 +374,43 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                     b.ToTable("doctor_affiliations", (string)null);
                 });
 
+            modelBuilder.Entity("SamplVSSkill.Domain.Entities.FamilyGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PhotoUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("photo_url");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("family_groups", (string)null);
+                });
+
             modelBuilder.Entity("SamplVSSkill.Domain.Entities.Insurer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -515,6 +547,27 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                     b.ToTable("specialties", (string)null);
                 });
 
+            modelBuilder.Entity("SamplVSSkill.Domain.Entities.UserInsurance", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("InsurerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("insurer_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CreatedAt");
+
+                    b.HasKey("UserId", "InsurerId");
+
+                    b.HasIndex("InsurerId");
+
+                    b.ToTable("user_insurances", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -566,16 +619,6 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("SamplVSSkill.Domain.Entities.AppUser", b =>
-                {
-                    b.HasOne("SamplVSSkill.Domain.Entities.Insurer", "Insurer")
-                        .WithMany()
-                        .HasForeignKey("InsurerId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Insurer");
-                });
-
             modelBuilder.Entity("SamplVSSkill.Domain.Entities.Doctor", b =>
                 {
                     b.HasOne("SamplVSSkill.Domain.Entities.Specialty", null)
@@ -603,6 +646,16 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                     b.Navigation("MedicalCenter");
                 });
 
+            modelBuilder.Entity("SamplVSSkill.Domain.Entities.FamilyGroup", b =>
+                {
+                    b.HasOne("SamplVSSkill.Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SamplVSSkill.Domain.Entities.MedicalCenter", b =>
                 {
                     b.HasOne("SamplVSSkill.Domain.Entities.CenterType", "CenterType")
@@ -611,6 +664,25 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("CenterType");
+                });
+
+            modelBuilder.Entity("SamplVSSkill.Domain.Entities.UserInsurance", b =>
+                {
+                    b.HasOne("SamplVSSkill.Domain.Entities.Insurer", "Insurer")
+                        .WithMany()
+                        .HasForeignKey("InsurerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SamplVSSkill.Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Insurer");
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

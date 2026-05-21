@@ -9,8 +9,9 @@ public record UpdateUserCommand(
     string Name,
     string LastName,
     DateTime? DateOfBirth,
-    Guid? InsurerId,
-    string? PhoneNumber);
+    string? PhoneNumber,
+    string? PhotoUrl,
+    string? Address);
 
 public record UpdateUserResponse(
     string Id,
@@ -18,8 +19,9 @@ public record UpdateUserResponse(
     string Name,
     string LastName,
     DateTime? DateOfBirth,
-    Guid? InsurerId,
-    string? PhoneNumber);
+    string? PhoneNumber,
+    string? PhotoUrl,
+    string? Address);
 
 // ── Validator ───────────────────────────────────────────────────
 public class UpdateUserValidator : AbstractValidator<UpdateUserCommand>
@@ -47,8 +49,9 @@ public class UpdateUserCommandHandler
         user.Name        = command.Name;
         user.LastName    = command.LastName;
         user.DateOfBirth = command.DateOfBirth;
-        user.InsurerId   = command.InsurerId;
         user.PhoneNumber = command.PhoneNumber;
+        user.PhotoUrl    = command.PhotoUrl;
+        user.Address     = command.Address;
 
         var result = await _userManager.UpdateAsync(user);
 
@@ -60,6 +63,6 @@ public class UpdateUserCommandHandler
 
         return Results.Ok(new UpdateUserResponse(
             user.Id, user.Email!, user.Name, user.LastName,
-            user.DateOfBirth, user.InsurerId, user.PhoneNumber));
+            user.DateOfBirth, user.PhoneNumber, user.PhotoUrl, user.Address));
     }
 }

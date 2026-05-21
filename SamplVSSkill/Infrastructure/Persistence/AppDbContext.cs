@@ -19,22 +19,54 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<Insurer> Insurers => Set<Insurer>();
     public DbSet<CenterType> CenterTypes => Set<CenterType>();
     public DbSet<DoctorAffiliation> DoctorAffiliations => Set<DoctorAffiliation>();
+    public DbSet<FamilyGroup> FamilyGroups => Set<FamilyGroup>();
+    public DbSet<UserInsurance> UserInsurances => Set<UserInsurance>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         // ── AppUser (Identity extended user) ─────────────────────
-        modelBuilder.Entity<AppUser>(entity =>
+        // No extra FK config needed — InsurerId removido (ver user_insurances).
+        // EF Core detecta automáticamente los campos extra (Name, LastName, etc.)
+
+
+        // ── UserInsurance (many-to-many: user ↔ insurer) ───────────────
+        modelBuilder.Entity<UserInsurance>(entity =>
         {
-            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(100);
-            entity.Property(e => e.LastName).HasColumnName("last_name").HasMaxLength(100);
-            entity.Property(e => e.DateOfBirth).HasColumnName("date_of_birth");
+            entity.ToTable("user_insurances");
+            entity.HasKey(e => new { e.UserId, e.InsurerId });
+            entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.InsurerId).HasColumnName("insurer_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("CreatedAt");
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.Insurer)
                   .WithMany()
                   .HasForeignKey(e => e.InsurerId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── FamilyGroup ───────────────────────────────────────
+        modelBuilder.Entity<FamilyGroup>(entity =>
+        {
+            entity.ToTable("family_groups");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.PhotoUrl).HasColumnName("photo_url");
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+
+            // FK: FamilyGroup → AppUser (owner)
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
                   .IsRequired(false)
                   .OnDelete(DeleteBehavior.SetNull);
         });

@@ -9,8 +9,13 @@ public record PagedUsersParams(
     int Page = 1,
     int PageSize = 10,
     string? Search = null,
-    string? SortBy = "created_at",
+    string? SortBy = "name",
     bool SortDesc = false);
+
+// ── Sub-record for insurance items ──────────────────────────────
+public record PagedUserInsurance(
+    Guid InsurerId, string InsurerName,
+    string? InsurerPhone, string? InsurerEmail, string? LogoUrl);
 
 // ── Response Item ───────────────────────────────────────────────
 public record PagedUserItem(
@@ -21,13 +26,27 @@ public record PagedUserItem(
     string? PhoneNumber,
     DateTime? DateOfBirth,
     string? PhotoUrl,
-    Guid? InsurerId,
-    string? InsurerName,
+    string? Address,
     bool EmailConfirmed,
     bool IsLockedOut,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    Guid? FamilyGroupId,
+    string? FamilyGroupName,
+    IReadOnlyList<PagedUserInsurance> Insurances);
 
-// ── Query Handler (Dapper) ──────────────────────────────────────
+// ── Private flat row (without Insurances) ──────────────────────
+file record PagedUserFlat(
+    string Id, string Email, string Name, string LastName,
+    string? PhoneNumber, DateTime? DateOfBirth, string? PhotoUrl,
+    string? Address, bool EmailConfirmed, bool IsLockedOut,
+    DateTime CreatedAt, Guid? FamilyGroupId, string? FamilyGroupName);
+
+// ── Private insurance row ───────────────────────────────────────
+file record PagedInsuranceRow(
+    string UserId, Guid InsurerId, string InsurerName,
+    string? InsurerPhone, string? InsurerEmail, string? LogoUrl);
+
+// ── Query Handler (Dapper, two-query approach) ──────────────────
 public class PagedUsersQueryHandler
 {
     private readonly DapperConnectionFactory _connectionFactory;
@@ -35,12 +54,11 @@ public class PagedUsersQueryHandler
     private static readonly Dictionary<string, string> AllowedSortColumns =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["name"]         = "u.\"Name\"",
-            ["lastname"]     = "u.\"LastName\"",
-            ["email"]        = "u.\"Email\"",
-            ["insurername"]  = "i.name",
+            ["name"]           = "u.\"Name\"",
+            ["lastname"]       = "u.\"LastName\"",
+            ["email"]          = "u.\"Email\"",
             ["emailconfirmed"] = "u.\"EmailConfirmed\"",
-            ["created_at"]   = "u.\"NormalizedEmail\"",   // AspNetUsers has no created_at; fallback to email sort
+            ["createdat"]      = "u.\"CreatedAt\"",
         };
 
     public PagedUsersQueryHandler(DapperConnectionFactory connectionFactory) =>
@@ -60,7 +78,7 @@ public class PagedUsersQueryHandler
         var countSql = $"""
             SELECT COUNT(*)
             FROM "AspNetUsers" u
-            LEFT JOIN insurers i ON u."insurer_id" = i.id
+            LEFT JOIN family_groups fg ON fg.user_id = u."Id"
             {where}
             """;
 
@@ -68,11 +86,47 @@ public class PagedUsersQueryHandler
 
         using var connection = _connectionFactory.CreateConnection();
 
+        // ── 1) Count ─────────────────────────────────────────────
         var totalCount = await connection.ExecuteScalarAsync<int>(
             new CommandDefinition(countSql, parameters, cancellationToken: ct));
 
-        var items = await connection.QueryAsync<PagedUserItem>(
-            new CommandDefinition(dataSql, parameters, cancellationToken: ct));
+        // ── 2) Paged users (flat, without insurances) ─────────────
+        var flatItems = (await connection.QueryAsync<PagedUserFlat>(
+            new CommandDefinition(dataSql, parameters, cancellationToken: ct))).ToList();
+
+        if (flatItems.Count == 0)
+            return new PaginatedResult<PagedUserItem>([], page, pageSize, totalCount);
+
+        // ── 3) Insurances only for users on this page ─────────────
+        var userIds = flatItems.Select(u => u.Id).ToArray();
+
+        const string insuranceSql = """
+            SELECT ui.user_id    AS UserId,
+                   i.id          AS InsurerId,
+                   i.name        AS InsurerName,
+                   i.phone       AS InsurerPhone,
+                   i.email       AS InsurerEmail,
+                   i.logo_url    AS LogoUrl
+            FROM user_insurances ui
+            INNER JOIN insurers i ON ui.insurer_id = i.id
+            WHERE ui.user_id = ANY(@UserIds)
+            """;
+
+        var insMap = (await connection.QueryAsync<PagedInsuranceRow>(
+            new CommandDefinition(insuranceSql, new { UserIds = userIds }, cancellationToken: ct)))
+            .GroupBy(r => r.UserId)
+            .ToDictionary(g => g.Key, g =>
+                (IReadOnlyList<PagedUserInsurance>)g
+                    .Select(r => new PagedUserInsurance(r.InsurerId, r.InsurerName, r.InsurerPhone, r.InsurerEmail, r.LogoUrl))
+                    .ToList());
+
+        // ── 4) Merge ──────────────────────────────────────────────
+        var items = flatItems.Select(u => new PagedUserItem(
+            u.Id, u.Email, u.Name, u.LastName,
+            u.PhoneNumber, u.DateOfBirth, u.PhotoUrl, u.Address,
+            u.EmailConfirmed, u.IsLockedOut, u.CreatedAt,
+            u.FamilyGroupId, u.FamilyGroupName,
+            insMap.TryGetValue(u.Id, out var ins) ? ins : Array.Empty<PagedUserInsurance>()));
 
         return new PaginatedResult<PagedUserItem>(items, page, pageSize, totalCount);
     }
@@ -93,7 +147,7 @@ public class PagedUsersQueryHandler
               WHERE u."Email"    ILIKE @Search
                  OR u."Name"     ILIKE @Search
                  OR u."LastName" ILIKE @Search
-                 OR i.name       ILIKE @Search
+                 OR fg.name      ILIKE @Search
               """;
 
     private static string BuildOrderByClause(PagedUsersParams p)
@@ -106,18 +160,19 @@ public class PagedUsersQueryHandler
     private static string BuildDataSql(string where, string orderBy) => $"""
         SELECT u."Id"             AS Id,
                u."Email"          AS Email,
-               u."name"           AS Name,
-               u."last_name"       AS LastName,
+               u."Name"           AS Name,
+               u."LastName"       AS LastName,
                u."PhoneNumber"    AS PhoneNumber,
-               u."date_of_birth"  AS DateOfBirth,
-               u."PhotoUrl"      AS PhotoUrl,
-               u."insurer_id"     AS InsurerId,
-               i.name             AS InsurerName,
+               u."DateOfBirth"    AS DateOfBirth,
+               u."PhotoUrl"       AS PhotoUrl,
+               u."Address"        AS Address,
                u."EmailConfirmed" AS EmailConfirmed,
                (u."LockoutEnd" IS NOT NULL AND u."LockoutEnd" > NOW()) AS IsLockedOut,
-               NOW()              AS CreatedAt
+               u."CreatedAt"      AS CreatedAt,
+               fg.id              AS FamilyGroupId,
+               fg.name            AS FamilyGroupName
         FROM "AspNetUsers" u
-        LEFT JOIN insurers i ON u."insurer_id" = i.id
+        LEFT JOIN family_groups fg ON fg.user_id = u."Id"
         {where}
         {orderBy}
         LIMIT @PageSize OFFSET @Offset

@@ -1,18 +1,9 @@
 // --- Identidad y Estructura Familiar ---
 
-Table users {
-  id uuid [pk, default: `gen_random_uuid()`]
-  full_name varchar
-  email varchar [unique, not null]
-  password_hash text [not null]
-  photo_url text
-  created_at timestamp [default: `now()`]
-}
-
 Table family_groups {
   id uuid [pk, default: `gen_random_uuid()`]
   name varchar [not null]
-  user_id uuid [ref: > users.id]
+  user_id text [ref: > AspNetUsers.Id]
   created_at timestamp [default: `now()`]
   photo_url text
   is_active boolean [default: true]
@@ -20,7 +11,7 @@ Table family_groups {
 
 Table family_memberships {
   id serial [pk]
-  user_id uuid [ref: > users.id]
+  user_id text [ref: > AspNetUsers.Id]
   family_group_id uuid [ref: > family_groups.id]
   is_admin boolean [default: false]
   relationship varchar
@@ -90,7 +81,7 @@ Table doctor_affiliations {
 
 Table medical_incidents {
   id uuid [pk, default: `gen_random_uuid()`]
-  owner_user_id uuid [ref: > users.id]
+  owner_user_id text [ref: > AspNetUsers.Id]
   pet_id uuid [ref: > pets.id]
   doctor_id uuid [ref: > doctors.id]
   center_id uuid [ref: > medical_centers.id]
@@ -151,11 +142,40 @@ Table insurers {
 
 Table user_pet_insurances {
   id uuid [pk]
-  user_id uuid [ref: > users.id]
+  user_id text [ref: > AspNetUsers.Id]
   pet_id uuid [ref: > pets.id]
   insurer_id uuid [ref: > insurers.id]
   policy_number varchar
   is_active boolean [default: true]
 }
 
-Ref: "users"."created_at" < "users"."photo_url"
+Table AspNetUsers {
+  Id text [pk]
+  UserName varchar(256)
+  NormalizedUserName varchar(256)
+  Email varchar(256)
+  NormalizedEmail varchar(256)
+  EmailConfirmed bool [not null]
+  PasswordHash text
+  SecurityStamp text
+  ConcurrencyStamp text
+  PhoneNumber text
+  PhoneNumberConfirmed bool [not null]
+  TwoFactorEnabled bool [not null]
+  LockoutEnd timestamptz
+  LockoutEnabled bool [not null]
+  AccessFailedCount int4 [not null]
+  DateOfBirth timestamptz
+  Name varchar(100) [not null, default: '']
+  LastName varchar(100) [not null, default: '']
+  Address text
+  PhotoUrl text
+  CreatedAt timestamp [default: `now()`]
+}
+
+Table user_insurances {
+  user_id text [ref: > AspNetUsers.Id]
+  insurer_id uuid [ref: > insurers.id]
+  CreatedAt timestamp [default: `now()`]
+}
+
