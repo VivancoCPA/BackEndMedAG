@@ -23,41 +23,62 @@ public class ForgotPasswordCommandHandler
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IEmailService _emailService;
-    private readonly IConfiguration _configuration;
 
     public ForgotPasswordCommandHandler(
         UserManager<AppUser> userManager,
-        IEmailService emailService,
-        IConfiguration configuration)
+        IEmailService emailService)
     {
         _userManager = userManager;
         _emailService = emailService;
-        _configuration = configuration;
     }
 
     public async Task<IResult> HandleAsync(ForgotPasswordCommand command, CancellationToken ct)
     {
         var user = await _userManager.FindByEmailAsync(command.Email);
 
+        const string responseMessage = "Si el correo electrónico ingresado existe en nuestro sistema, recibirás una nueva contraseña temporal por correo.";
+
         // Always return OK to prevent user enumeration attacks
         if (user is null)
-            return Results.Ok(new ForgotPasswordResponse(
-                "Si el correo existe en nuestro sistema, recibirás las instrucciones de recuperación."));
+            return Results.Ok(new ForgotPasswordResponse(responseMessage));
 
+        // 1. Autogenerar una contraseña temporal segura
+        var tempPassword = GenerateSecureTemporaryPassword();
+
+        // 2. Generar token de reseteo interno y aplicarlo
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await _userManager.ResetPasswordAsync(user, token, tempPassword);
 
-        // URL-encode the token (it can contain special chars)
-        var encodedToken = Uri.EscapeDataString(token);
-        var frontendBaseUrl = _configuration["App:FrontendUrl"] ?? "https://localhost:3000";
-        var resetLink = $"{frontendBaseUrl}/auth/reset-password?email={command.Email}&token={encodedToken}";
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .GroupBy(e => e.Code)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.Description).ToArray()
+                );
+            return Results.ValidationProblem(errors);
+        }
 
-        await _emailService.SendPasswordResetEmailAsync(
+        // 3. Apagar PasswordConfirmed (obligar a cambiarla en su primer login)
+        user.PasswordConfirmed = false;
+        await _userManager.UpdateAsync(user);
+
+        // 4. Enviar correo con la contraseña temporal autogenerada
+        await _emailService.SendForgotPasswordTemporaryPasswordEmailAsync(
             user.Email!,
             $"{user.Name} {user.LastName}",
-            resetLink,
+            tempPassword,
             ct);
 
-        return Results.Ok(new ForgotPasswordResponse(
-            "Si el correo existe en nuestro sistema, recibirás las instrucciones de recuperación."));
+        return Results.Ok(new ForgotPasswordResponse(responseMessage));
+    }
+
+    private static string GenerateSecureTemporaryPassword()
+    {
+        var guidUpper = Guid.NewGuid().ToString("N")[..8].ToUpper();
+        var guidLower = Guid.NewGuid().ToString("N")[..8].ToLower();
+        return $"Temp-{guidUpper}{guidLower}1!";
     }
 }
+

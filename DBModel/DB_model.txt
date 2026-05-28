@@ -170,6 +170,7 @@ Table AspNetUsers {
   LastName varchar(100) [not null, default: '']
   Address text
   PhotoUrl text
+  PasswordConfirmed bool [default: false]
   CreatedAt timestamp [default: `now()`]
 }
 

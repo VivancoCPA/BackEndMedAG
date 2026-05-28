@@ -51,6 +51,9 @@ public class ResetPasswordCommandHandler
             return Results.ValidationProblem(errors);
         }
 
+        user.PasswordConfirmed = true;
+        await _userManager.UpdateAsync(user);
+
         return Results.Ok(new ResetPasswordResponse(user.Email!, "Contraseña restablecida exitosamente."));
     }
 }

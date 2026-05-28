@@ -13,6 +13,10 @@ public class AppUser : IdentityUser
     public DateTime? DateOfBirth { get; set; }
     public string? PhotoUrl { get; set; }
     public string? Address { get; set; }
+    public bool PasswordConfirmed { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     // InsurerId eliminado: las aseguradoras se gestionan en user_insurances (many-to-many)
+
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
 }

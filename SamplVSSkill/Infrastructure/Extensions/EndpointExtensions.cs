@@ -1,5 +1,6 @@
 using SamplVSSkill.Features.Auth.Register;
 using SamplVSSkill.Features.Auth.Login;
+using SamplVSSkill.Features.Auth.RefreshToken;
 using SamplVSSkill.Features.Auth.ChangePassword;
 using SamplVSSkill.Features.Auth.ForgotPassword;
 using SamplVSSkill.Features.Auth.ResetPassword;
@@ -12,6 +13,7 @@ using SamplVSSkill.Features.Auth.GetUserRoles;
 using SamplVSSkill.Features.Auth.ListUsers;
 using SamplVSSkill.Features.Auth.PagedUsers;
 using SamplVSSkill.Features.Auth.GetUser;
+using SamplVSSkill.Features.Auth.CreateUser;
 using SamplVSSkill.Features.Auth.UpdateUser;
 using SamplVSSkill.Features.Auth.ToggleUserStatus;
 using SamplVSSkill.Features.Auth.AssignClaim;
@@ -68,6 +70,9 @@ using SamplVSSkill.Features.FamilyGroups.ToggleFamilyGroupStatus;
 using SamplVSSkill.Features.UserInsurances.ListUserInsurances;
 using SamplVSSkill.Features.UserInsurances.AssignUserInsurance;
 using SamplVSSkill.Features.UserInsurances.RemoveUserInsurance;
+using SamplVSSkill.Features.FamilyMemberships.AssignFamilyMembership;
+using SamplVSSkill.Features.FamilyMemberships.ListFamilyMemberships;
+using SamplVSSkill.Features.FamilyMemberships.RemoveFamilyMembership;
 
 namespace SamplVSSkill.Infrastructure.Extensions;
 
@@ -85,6 +90,7 @@ public static class EndpointExtensions
         ForgotPasswordEndpoint.Map(app);
         ResetPasswordEndpoint.Map(app);
         ChangePasswordEndpoint.Map(app);
+        RefreshTokenEndpoint.Map(app);
 
         // ── Roles ──
         CreateRoleEndpoint.Map(app);
@@ -100,6 +106,7 @@ public static class EndpointExtensions
         ListUsersEndpoint.Map(app);
         PagedUsersEndpoint.Map(app);
         GetUserEndpoint.Map(app);
+        CreateUserEndpoint.Map(app);
         UpdateUserEndpoint.Map(app);
         ToggleUserStatusEndpoint.Map(app);
 
@@ -175,6 +182,11 @@ public static class EndpointExtensions
         AssignUserInsuranceEndpoint.Map(app);
         RemoveUserInsuranceEndpoint.Map(app);
 
+        // ── Family Memberships ──
+        AssignFamilyMembershipEndpoint.Map(app);
+        ListFamilyMembershipsEndpoint.Map(app);
+        RemoveFamilyMembershipEndpoint.Map(app);
+
         return app;
     }
 
@@ -189,6 +201,7 @@ public static class EndpointExtensions
         services.AddScoped<ChangePasswordCommandHandler>();
         services.AddScoped<ForgotPasswordCommandHandler>();
         services.AddScoped<ResetPasswordCommandHandler>();
+        services.AddScoped<RefreshTokenCommandHandler>();
 
         // ── Roles ──
         services.AddScoped<CreateRoleCommandHandler>();
@@ -204,6 +217,7 @@ public static class EndpointExtensions
         services.AddScoped<ListUsersQueryHandler>();
         services.AddScoped<PagedUsersQueryHandler>();
         services.AddScoped<GetUserQueryHandler>();
+        services.AddScoped<CreateUserCommandHandler>();
         services.AddScoped<UpdateUserCommandHandler>();
         services.AddScoped<ToggleUserStatusCommandHandler>();
 
@@ -278,6 +292,11 @@ public static class EndpointExtensions
         services.AddScoped<ListUserInsurancesQueryHandler>();
         services.AddScoped<AssignUserInsuranceCommandHandler>();
         services.AddScoped<RemoveUserInsuranceCommandHandler>();
+
+        // ── Family Memberships ──
+        services.AddScoped<AssignFamilyMembershipCommandHandler>();
+        services.AddScoped<ListFamilyMembershipsQueryHandler>();
+        services.AddScoped<RemoveFamilyMembershipCommandHandler>();
 
         return services;
     }

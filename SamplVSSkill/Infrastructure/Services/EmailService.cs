@@ -4,6 +4,8 @@ namespace SamplVSSkill.Infrastructure.Services;
 public interface IEmailService
 {
     Task SendPasswordResetEmailAsync(string toEmail, string userName, string resetLink, CancellationToken ct = default);
+    Task SendTemporaryPasswordEmailAsync(string toEmail, string userName, string temporaryPassword, CancellationToken ct = default);
+    Task SendForgotPasswordTemporaryPasswordEmailAsync(string toEmail, string userName, string temporaryPassword, CancellationToken ct = default);
 }
 
 // ── Development/Logger Implementation ──────────────────────────────────────
@@ -26,6 +28,34 @@ public class LoggerEmailService : IEmailService
             "  Link: {Link}\n" +
             "==========================================",
             toEmail, userName, resetLink);
+
+        return Task.CompletedTask;
+    }
+
+    public Task SendTemporaryPasswordEmailAsync(string toEmail, string userName, string temporaryPassword, CancellationToken ct = default)
+    {
+        _logger.LogInformation(
+            "========== TEMPORARY PASSWORD EMAIL ==========\n" +
+            "  To:       {Email}\n" +
+            "  User:     {UserName}\n" +
+            "  TempPass: {TemporaryPassword}\n" +
+            "  Message:  Su cuenta ha sido creada. Por favor inicie sesión y cambie su contraseña.\n" +
+            "==============================================",
+            toEmail, userName, temporaryPassword);
+
+        return Task.CompletedTask;
+    }
+
+    public Task SendForgotPasswordTemporaryPasswordEmailAsync(string toEmail, string userName, string temporaryPassword, CancellationToken ct = default)
+    {
+        _logger.LogInformation(
+            "========== FORGOT PASSWORD TEMPORARY PASSWORD EMAIL ==========\n" +
+            "  To:       {Email}\n" +
+            "  User:     {UserName}\n" +
+            "  TempPass: {TemporaryPassword}\n" +
+            "  Message:  Se ha restablecido su contraseña con un valor temporal. Por favor inicie sesión y cámbiela.\n" +
+            "==============================================================",
+            toEmail, userName, temporaryPassword);
 
         return Task.CompletedTask;
     }

@@ -13,7 +13,7 @@ public record RegisterCommand(
     string Password,
     string Phone,
     DateTime? DateOfBirth);
-public record RegisterResponse(string Token, string Email, string Name, string LastName);
+public record RegisterResponse(string Token, string RefreshToken, string Email, string Name, string LastName);
 
 // ── Validator ───────────────────────────────────────────────────
 public class RegisterValidator : AbstractValidator<RegisterCommand>
@@ -63,7 +63,8 @@ public class RegisterCommandHandler
             Name        = command.Name,
             LastName    = command.LastName,
             PhoneNumber = command.Phone,
-            DateOfBirth = command.DateOfBirth
+            DateOfBirth = command.DateOfBirth,
+            PasswordConfirmed = true
         };
 
         var result = await _userManager.CreateAsync(user, command.Password);
@@ -80,6 +81,12 @@ public class RegisterCommandHandler
         }
 
         var token = _jwtService.GenerateToken(user);
-        return Results.Created("/api/auth/register", new RegisterResponse(token, user.Email!, user.Name, user.LastName));
+        var refreshToken = _jwtService.GenerateRefreshToken();
+
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+        await _userManager.UpdateAsync(user);
+
+        return Results.Created("/api/auth/register", new RegisterResponse(token, refreshToken, user.Email!, user.Name, user.LastName));
     }
 }

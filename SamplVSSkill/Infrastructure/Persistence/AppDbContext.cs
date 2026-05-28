@@ -21,6 +21,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<DoctorAffiliation> DoctorAffiliations => Set<DoctorAffiliation>();
     public DbSet<FamilyGroup> FamilyGroups => Set<FamilyGroup>();
     public DbSet<UserInsurance> UserInsurances => Set<UserInsurance>();
+    public DbSet<FamilyMembership> FamilyMemberships => Set<FamilyMembership>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -69,6 +70,33 @@ public class AppDbContext : IdentityDbContext<AppUser>
                   .HasForeignKey(e => e.UserId)
                   .IsRequired(false)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ── FamilyMembership ───────────────────────────────────
+        modelBuilder.Entity<FamilyMembership>(entity =>
+        {
+            entity.ToTable("family_memberships");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+            entity.Property(e => e.FamilyGroupId).HasColumnName("family_group_id").IsRequired();
+            entity.Property(e => e.IsAdmin).HasColumnName("is_admin").HasDefaultValue(false);
+            entity.Property(e => e.Relationship).HasColumnName("relationship");
+
+            // FK: FamilyMembership → AppUser
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // FK: FamilyMembership → FamilyGroup
+            entity.HasOne(e => e.FamilyGroup)
+                  .WithMany()
+                  .HasForeignKey(e => e.FamilyGroupId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Unique index to prevent duplicate user in the same group
+            entity.HasIndex(e => new { e.UserId, e.FamilyGroupId }).IsUnique();
         });
 
         // ── CenterType ───────────────────────────────────────

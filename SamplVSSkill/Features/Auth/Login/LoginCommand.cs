@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using SamplVSSkill.Domain.Entities;
 using SamplVSSkill.Infrastructure.Auth;
@@ -7,7 +8,7 @@ namespace SamplVSSkill.Features.Auth.Login;
 
 // ── Request / Response ──────────────────────────────────────────
 public record LoginCommand(string Email, string Password);
-public record LoginResponse(string Token, string Email, string Name, string LastName);
+public record LoginResponse(string Token, string RefreshToken, string Email, string Name, string LastName, bool PasswordConfirmed);
 
 // ── Validator ───────────────────────────────────────────────────
 public class LoginValidator : AbstractValidator<LoginCommand>
@@ -56,6 +57,13 @@ public class LoginCommandHandler
         }
 
         var token = _jwtService.GenerateToken(user);
-        return Results.Ok(new LoginResponse(token, user.Email!, user.Name, user.LastName));
+        var refreshToken = _jwtService.GenerateRefreshToken();
+
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+        await _userManager.UpdateAsync(user);
+
+        return Results.Ok(new LoginResponse(token, refreshToken, user.Email!, user.Name, user.LastName, user.PasswordConfirmed));
     }
 }
+

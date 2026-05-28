@@ -12,6 +12,7 @@ public record GetUserResponse(
     DateTime? DateOfBirth,
     bool EmailConfirmed,
     bool IsLockedOut,
+    bool PasswordConfirmed,
     DateTimeOffset? LockoutEnd,
     IList<string> Roles,
     IList<string> Claims);
@@ -44,6 +45,7 @@ public class GetUserQueryHandler
             EmailConfirmed: user.EmailConfirmed,
             IsLockedOut:    user.LockoutEnd != null && user.LockoutEnd > now,
             LockoutEnd:     user.LockoutEnd,
+            PasswordConfirmed: user.PasswordConfirmed,
             Roles:          roles,
             Claims:         claims.Select(c => $"{c.Type}:{c.Value}").ToList()));
     }

@@ -47,6 +47,9 @@ public class ChangePasswordCommandHandler
             return Results.ValidationProblem(errors);
         }
 
+        user.PasswordConfirmed = true;
+        await _userManager.UpdateAsync(user);
+
         return Results.Ok(new ChangePasswordResponse(user.Email!, "Contraseña cambiada exitosamente."));
     }
 }
