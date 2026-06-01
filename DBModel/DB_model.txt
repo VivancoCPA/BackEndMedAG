@@ -172,6 +172,7 @@ Table AspNetUsers {
   PhotoUrl text
   PasswordConfirmed bool [default: false]
   CreatedAt timestamp [default: `now()`]
+  LastAccess timestamptz
 }
 
 Table user_insurances {

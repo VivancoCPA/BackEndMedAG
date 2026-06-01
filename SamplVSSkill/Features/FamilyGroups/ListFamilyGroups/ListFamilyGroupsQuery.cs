@@ -23,7 +23,7 @@ public class ListFamilyGroupsQueryHandler
             SELECT fg.id           AS Id,
                    fg.name         AS Name,
                    fg.user_id      AS UserId,
-                   (u."name" || ' ' || u."last_name") AS OwnerName,
+                   (u."Name" || ' ' || u."LastName") AS OwnerName,
                    fg.photo_url    AS PhotoUrl,
                    fg.is_active    AS IsActive,
                    fg.created_at   AS CreatedAt

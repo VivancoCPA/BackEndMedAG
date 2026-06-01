@@ -57,6 +57,7 @@ Devuelve un objeto `GetUserResponse` con la información detallada del perfil:
   "isLockedOut": false,
   "lockoutEnd": null,
   "passwordConfirmed": true,
+  "lastAccess": "2026-06-01T09:46:00Z",
   "roles": ["string"],
   "claims": ["TipoClaim:ValorClaim"]
 }
@@ -90,6 +91,8 @@ Retorna una lista `IEnumerable<ListUsersResponse>` con todos los usuarios regist
     "address": "string",
     "emailConfirmed": true,
     "isLockedOut": false,
+    "lastAccess": "2026-06-01T09:46:00Z",
+    "passwordConfirmed": true,
     "familyGroupId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "familyGroupName": "string",
     "insurances": [
@@ -137,6 +140,8 @@ Retorna un objeto `PaginatedResult<PagedUserItem>` que incluye metadatos de la p
       "emailConfirmed": true,
       "isLockedOut": false,
       "createdAt": "2026-05-22T18:24:27Z",
+      "lastAccess": "2026-06-01T09:46:00Z",
+      "passwordConfirmed": true,
       "familyGroupId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       "familyGroupName": "string",
       "insurances": [
@@ -175,7 +180,7 @@ Objeto `UpdateUserCommand` con los campos actualizables:
 {
   "name": "Juan",
   "lastName": "Pérez",
-  "dateOfBirth": "1990-05-15T00:00:00Z",
+  "dateOfBirth": "1990-05-15",
   "phoneNumber": "+1234567890",
   "photoUrl": "https://example.com/avatar.jpg",
   "address": "Calle Falsa 123"
@@ -184,6 +189,7 @@ Objeto `UpdateUserCommand` con los campos actualizables:
 *   **Validaciones:**
     *   `name`: Obligatorio, longitud máxima 100 caracteres.
     *   `lastName`: Obligatorio, longitud máxima 100 caracteres.
+    *   `dateOfBirth`: Opcional, debe tener un formato de fecha válido `yyyy-MM-dd`.
 
 #### Respuesta Exitosa (`200 OK`)
 Retorna `UpdateUserResponse` confirmando los cambios realizados:
@@ -240,42 +246,43 @@ Retorna `ToggleUserStatusResponse` con el estado final:
 *   **Nombre de Acción:** `CreateUser`
 *   **Autorización:** Ninguna (Omitido por desarrollo, se puede proteger con Roles/Admins luego).
 
-#### Cuerpo de la Solicitud (Request Body - JSON)
-Objeto `CreateUserCommand` con la información del usuario a crear:
-```json
-{
-  "email": "nuevo.usuario@example.com",
-  "name": "Juan",
-  "lastName": "Pérez",
-  "phone": "+1234567890",
-  "dateOfBirth": "1995-08-25T00:00:00Z"
-}
-```
-*   **Validaciones:**
-    *   `email`: Obligatorio, formato de dirección de email válido.
-    *   `name`: Obligatorio, longitud máxima 100 caracteres.
-    *   `lastName`: Obligatorio, longitud máxima 100 caracteres.
+#### Cuerpo de la Solicitud (FormData / `multipart/form-data`)
+La petición debe enviarse codificada como formulario (`multipart/form-data`) con los siguientes campos:
+
+*   `email` (string, Requerido): Correo electrónico del usuario. Debe ser único y tener formato de dirección válido.
+*   `name` (string, Requerido): Nombre del usuario. Máx. 100 caracteres.
+*   `lastName` (string, Requerido): Apellido del usuario. Máx. 100 caracteres.
+*   `phone` (string, Opcional): Teléfono del usuario.
+*   `dateOfBirth` (string / DateTime, Opcional): Fecha de nacimiento (ej. `1995-08-25`).
+*   `photo` (file / IFormFile, Opcional): Archivo de imagen de la foto de perfil.
+
+> [!IMPORTANT]
+> **Recomendación para el FrontEnd (React / JS / TS)**:
+> Al invocar este endpoint utilizando un objeto `FormData`, **NO debes definir manualmente la cabecera `'Content-Type': 'multipart/form-data'`** en las cabeceras (`headers`) de tu cliente HTTP (`fetch` o `axios`). 
+> Al pasar el objeto `FormData` como cuerpo de la petición, el navegador asignará y gestionará de manera automática la cabecera `multipart/form-data` e inyectará el parámetro dinámico de separación `boundary`. Si lo declaras a mano, la petición fallará en el servidor por ausencia de delimitadores.
 
 #### Comportamiento
 *   Verifica que el email no esté en uso.
-*   Autogenera una contraseña temporal segura que cumple con las directivas de seguridad.
-*   Registra el usuario con `EmailConfirmed = true` (ya confirmado) y `PasswordConfirmed = false` (indica que debe ser cambiada en el primer ingreso).
-*   Envía un correo al usuario final con sus credenciales y contraseña temporal.
+*   Autogenera una contraseña temporal segura que cumple con las directivas de complejidad de Identity.
+*   **Gestión de Foto de Perfil**: Si se proporciona un archivo de imagen en la propiedad `photo`, se crea recursivamente la carpeta local `wwwroot/uploads/profiles/` en el servidor (si no existe), se le genera un nombre seguro y único usando un GUID para evitar colisiones y path traversal, se escribe físicamente el archivo en disco, y se almacena la ruta de acceso relativa (ej. `/uploads/profiles/a5b6c7d8e9f0...jpg`) en el campo `PhotoUrl` del registro de usuario. Si se produce un error durante la creación definitiva del registro en la base de datos, el archivo cargado se elimina de forma automática y preventiva para evitar almacenamiento basura.
+*   Registra el usuario con `EmailConfirmed = true` (ya confirmado automáticamente por el administrador) y `PasswordConfirmed = false` (indica que debe ser cambiada en el primer ingreso).
+*   Envía un correo de bienvenida al usuario final con sus credenciales y contraseña temporal.
 
 #### Respuesta Exitosa (`201 Created`)
-Retorna `CreateUserResponse` con los detalles básicos:
+Retorna `CreateUserResponse` con los detalles del usuario creado e incluye la ruta de acceso a la foto cargada:
 ```json
 {
-  "id": "string",
+  "id": "d748f65e-2b1a-42c3-98fe-d27e7fcd61a2",
   "email": "nuevo.usuario@example.com",
   "name": "Juan",
   "lastName": "Pérez",
+  "photoUrl": "/uploads/profiles/7a2be748f65e2b1a42c398fed27e7fcd.jpg",
   "passwordConfirmed": false
 }
 ```
 
 #### Otras Respuestas
-*   **`400 Bad Request`**: Datos inválidos en el cuerpo (problema de validación).
+*   **`400 Bad Request`**: Datos inválidos en el formulario enviado (problema de validación).
 *   **`409 Conflict`**: Si el email provisto ya se encuentra registrado.
 
 ---
@@ -464,10 +471,15 @@ Estos endpoints forman parte integral de la gestión e identidad del usuario, co
   "email": "juan.perez@example.com",
   "password": "SecurePassword123!",
   "phone": "+1234567890",
-  "dateOfBirth": "1990-05-15T00:00:00Z"
+  "dateOfBirth": "1990-05-15"
 }
 ```
-*   **Validaciones básicas de Contraseña:** Mínimo 8 caracteres, al menos una mayúscula, una minúscula, un dígito y un carácter especial.
+*   **Validaciones:**
+    *   `name`: Obligatorio, longitud máxima 100 caracteres.
+    *   `lastName`: Obligatorio, longitud máxima 100 caracteres.
+    *   `email`: Obligatorio, formato de email válido y único.
+    *   `password`: Obligatorio. Mínimo 8 caracteres, al menos una mayúscula, una minúscula, un dígito y un carácter especial.
+    *   `dateOfBirth`: Opcional, debe tener un formato de fecha válido `yyyy-MM-dd`.
 
 #### Respuesta Exitosa (`201 Created`)
 Genera la cuenta en la base de datos, autocalcula un token de sesión JWT, genera un refresh token y retorna `RegisterResponse`:

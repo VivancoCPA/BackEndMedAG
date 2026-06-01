@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using SamplVSSkill.Infrastructure.Middleware;
 
 namespace SamplVSSkill.Features.Auth.CreateUser;
@@ -6,6 +7,7 @@ public static class CreateUserEndpoint
 {
     public static void Map(IEndpointRouteBuilder app) =>
         app.MapPost("/api/auth/users", Handle)
+           .DisableAntiforgery()
            .AddEndpointFilter<ValidationFilter<CreateUserCommand>>()
            .WithTags("Users")
            .WithName("CreateUser")
@@ -16,7 +18,7 @@ public static class CreateUserEndpoint
            //.RequireAuthorization(); // Omitido por desarrollo, se puede proteger con Roles/Admins luego.
 
     private static async Task<IResult> Handle(
-        CreateUserCommand command,
+        [FromForm] CreateUserCommand command,
         CreateUserCommandHandler handler,
         CancellationToken ct)
         => await handler.HandleAsync(command, ct);

@@ -30,6 +30,8 @@ public record PagedUserItem(
     bool EmailConfirmed,
     bool IsLockedOut,
     DateTime CreatedAt,
+    DateTime? LastAccess,
+    bool PasswordConfirmed,
     Guid? FamilyGroupId,
     string? FamilyGroupName,
     IReadOnlyList<PagedUserInsurance> Insurances);
@@ -39,7 +41,8 @@ file record PagedUserFlat(
     string Id, string Email, string Name, string LastName,
     string? PhoneNumber, DateTime? DateOfBirth, string? PhotoUrl,
     string? Address, bool EmailConfirmed, bool IsLockedOut,
-    DateTime CreatedAt, Guid? FamilyGroupId, string? FamilyGroupName);
+    DateTime CreatedAt, DateTime? LastAccess, bool PasswordConfirmed,
+    Guid? FamilyGroupId, string? FamilyGroupName);
 
 // ── Private insurance row ───────────────────────────────────────
 file record PagedInsuranceRow(
@@ -124,7 +127,7 @@ public class PagedUsersQueryHandler
         var items = flatItems.Select(u => new PagedUserItem(
             u.Id, u.Email, u.Name, u.LastName,
             u.PhoneNumber, u.DateOfBirth, u.PhotoUrl, u.Address,
-            u.EmailConfirmed, u.IsLockedOut, u.CreatedAt,
+            u.EmailConfirmed, u.IsLockedOut, u.CreatedAt, u.LastAccess, u.PasswordConfirmed,
             u.FamilyGroupId, u.FamilyGroupName,
             insMap.TryGetValue(u.Id, out var ins) ? ins : Array.Empty<PagedUserInsurance>()));
 
@@ -169,6 +172,8 @@ public class PagedUsersQueryHandler
                u."EmailConfirmed" AS EmailConfirmed,
                (u."LockoutEnd" IS NOT NULL AND u."LockoutEnd" > NOW()) AS IsLockedOut,
                u."CreatedAt"      AS CreatedAt,
+               u."LastAccess"     AS LastAccess,
+               u."PasswordConfirmed" AS PasswordConfirmed,
                fg.id              AS FamilyGroupId,
                fg.name            AS FamilyGroupName
         FROM "AspNetUsers" u

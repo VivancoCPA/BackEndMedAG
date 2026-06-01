@@ -15,6 +15,7 @@ public class AppUser : IdentityUser
     public string? Address { get; set; }
     public bool PasswordConfirmed { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? LastAccess { get; set; }
     // InsurerId eliminado: las aseguradoras se gestionan en user_insurances (many-to-many)
 
     public string? RefreshToken { get; set; }

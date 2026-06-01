@@ -20,6 +20,8 @@ public record ListUsersResponse(
     string? Address,
     bool EmailConfirmed,
     bool IsLockedOut,
+    DateTime? LastAccess,
+    bool PasswordConfirmed,
     Guid? FamilyGroupId,
     string? FamilyGroupName,
     IReadOnlyList<UserInsuranceSummary> Insurances);
@@ -28,7 +30,8 @@ public record ListUsersResponse(
 file record ListUserFlat(
     string Id, string Email, string Name, string LastName,
     string? PhoneNumber, DateTime? DateOfBirth, string? PhotoUrl,
-    string? Address, bool EmailConfirmed, bool IsLockedOut,
+    string? Address, bool EmailConfirmed, bool IsLockedOut, DateTime? LastAccess,
+    bool PasswordConfirmed,
     Guid? FamilyGroupId, string? FamilyGroupName);
 
 // ── Private insurance row ───────────────────────────────────────
@@ -58,6 +61,8 @@ public class ListUsersQueryHandler
                    u."Address"        AS Address,
                    u."EmailConfirmed" AS EmailConfirmed,
                    (u."LockoutEnd" IS NOT NULL AND u."LockoutEnd" > NOW()) AS IsLockedOut,
+                   u."LastAccess"     AS LastAccess,
+                   u."PasswordConfirmed" AS PasswordConfirmed,
                    fg.id              AS FamilyGroupId,
                    fg.name            AS FamilyGroupName
             FROM "AspNetUsers" u
@@ -90,7 +95,7 @@ public class ListUsersQueryHandler
         return users.Select(u => new ListUsersResponse(
             u.Id, u.Email, u.Name, u.LastName,
             u.PhoneNumber, u.DateOfBirth, u.PhotoUrl, u.Address,
-            u.EmailConfirmed, u.IsLockedOut,
+            u.EmailConfirmed, u.IsLockedOut, u.LastAccess, u.PasswordConfirmed,
             u.FamilyGroupId, u.FamilyGroupName,
             insMap.TryGetValue(u.Id, out var ins) ? ins : Array.Empty<UserInsuranceSummary>()));
     }

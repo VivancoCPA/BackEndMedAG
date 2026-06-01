@@ -2,6 +2,10 @@ using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using SamplVSSkill.Domain.Entities;
 using SamplVSSkill.Infrastructure.Auth;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SamplVSSkill.Features.Auth.Register;
 
@@ -12,7 +16,8 @@ public record RegisterCommand(
     string Email,
     string Password,
     string Phone,
-    DateTime? DateOfBirth);
+    string? DateOfBirth); // Recibido como string para evitar inconsistencias de formato por cultura/región
+
 public record RegisterResponse(string Token, string RefreshToken, string Email, string Name, string LastName);
 
 // ── Validator ───────────────────────────────────────────────────
@@ -39,6 +44,10 @@ public class RegisterValidator : AbstractValidator<RegisterCommand>
             .Matches(@"[a-z]").WithMessage("La contraseña debe tener al menos una letra minúscula.")
             .Matches(@"[0-9]").WithMessage("La contraseña debe tener al menos un dígito.")
             .Matches(@"[^a-zA-Z0-9]").WithMessage("La contraseña debe tener al menos un caracter especial (* @ ! etc).");
+
+        RuleFor(x => x.DateOfBirth)
+            .Must(dob => string.IsNullOrEmpty(dob) || DateTime.TryParseExact(dob, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
+            .WithMessage("La fecha de nacimiento debe estar en formato yyyy-MM-dd.");
     }
 }
 
@@ -56,6 +65,14 @@ public class RegisterCommandHandler
 
     public async Task<IResult> HandleAsync(RegisterCommand command, CancellationToken ct)
     {
+        // Parsear fecha de nacimiento de forma independiente a la cultura del servidor
+        DateTime? dateOfBirth = null;
+        if (!string.IsNullOrWhiteSpace(command.DateOfBirth) &&
+            DateTime.TryParseExact(command.DateOfBirth, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedDate))
+        {
+            dateOfBirth = DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
+        }
+
         var user = new AppUser
         {
             UserName    = command.Email,
@@ -63,7 +80,7 @@ public class RegisterCommandHandler
             Name        = command.Name,
             LastName    = command.LastName,
             PhoneNumber = command.Phone,
-            DateOfBirth = command.DateOfBirth,
+            DateOfBirth = dateOfBirth,
             PasswordConfirmed = true
         };
 
@@ -90,3 +107,4 @@ public class RegisterCommandHandler
         return Results.Created("/api/auth/register", new RegisterResponse(token, refreshToken, user.Email!, user.Name, user.LastName));
     }
 }
+

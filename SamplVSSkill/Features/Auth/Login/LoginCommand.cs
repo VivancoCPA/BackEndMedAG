@@ -61,6 +61,7 @@ public class LoginCommandHandler
 
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+        user.LastAccess = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 
         return Results.Ok(new LoginResponse(token, refreshToken, user.Email!, user.Name, user.LastName, user.PasswordConfirmed));
