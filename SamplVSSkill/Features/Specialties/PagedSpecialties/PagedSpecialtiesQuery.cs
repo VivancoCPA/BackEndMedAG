@@ -13,7 +13,7 @@ public record PagedSpecialtiesParams(
     bool SortDesc = false);
 
 // ── Response Item ───────────────────────────────────────────────
-public record PagedSpecialtyItem(int Id, string Name, bool IsActive, DateTime CreatedAt);
+public record PagedSpecialtyItem(int Id, string Name, string Description, bool IsActive, DateTime CreatedAt);
 
 // ── Query Handler (Dapper) ──────────────────────────────────────
 public class PagedSpecialtiesQueryHandler
@@ -23,9 +23,10 @@ public class PagedSpecialtiesQueryHandler
     private static readonly Dictionary<string, string> AllowedSortColumns =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["name"]       = "name",
-            ["isactive"]   = "is_active",
-            ["created_at"] = "created_at"   // default sort para primera llamada
+            ["name"]        = "name",
+            ["description"] = "description",
+            ["isactive"]    = "is_active",
+            ["created_at"]  = "created_at"   // default sort para primera llamada
         };
 
     public PagedSpecialtiesQueryHandler(DapperConnectionFactory connectionFactory) =>
@@ -80,10 +81,11 @@ public class PagedSpecialtiesQueryHandler
     }
 
     private static string BuildDataSql(string where, string orderBy) => $"""
-        SELECT id         AS Id,
-               name       AS Name,
-               is_active  AS IsActive,
-               created_at AS CreatedAt
+        SELECT id          AS Id,
+               name        AS Name,
+               description AS Description,
+               is_active   AS IsActive,
+               created_at  AS CreatedAt
         FROM specialties
         {where}
         {orderBy}

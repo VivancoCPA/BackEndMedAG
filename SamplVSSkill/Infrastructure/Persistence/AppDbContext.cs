@@ -120,6 +120,7 @@ public class AppDbContext : IdentityDbContext<AppUser, ApplicationRole, string>
             // int serial — DB generates the value on insert
             entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
             entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.Description).HasColumnName("description").IsRequired();
             entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
         });
