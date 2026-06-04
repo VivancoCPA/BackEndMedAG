@@ -1,7 +1,10 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using SamplVSSkill.Domain.Entities;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,13 +12,15 @@ using System.Threading.Tasks;
 namespace SamplVSSkill.Features.Auth.UpdateUser;
 
 // ── Request / Response ──────────────────────────────────────────
-public record UpdateUserCommand(
-    string Name,
-    string LastName,
-    string? DateOfBirth, // Recibido como string para evitar inconsistencias de formato por cultura/región
-    string? PhoneNumber,
-    string? PhotoUrl,
-    string? Address);
+public record UpdateUserCommand
+{
+    public string Name { get; init; } = default!;
+    public string LastName { get; init; } = default!;
+    public string? DateOfBirth { get; init; } // Recibido como string para evitar inconsistencias de formato por cultura/región
+    public string? PhoneNumber { get; init; }
+    public IFormFile? Photo { get; init; }
+    public string? Address { get; init; }
+}
 
 public record UpdateUserResponse(
     string Id,
@@ -45,8 +50,13 @@ public class UpdateUserValidator : AbstractValidator<UpdateUserCommand>
 public class UpdateUserCommandHandler
 {
     private readonly UserManager<AppUser> _userManager;
+    private readonly IWebHostEnvironment _webHostEnvironment;
 
-    public UpdateUserCommandHandler(UserManager<AppUser> userManager) => _userManager = userManager;
+    public UpdateUserCommandHandler(UserManager<AppUser> userManager, IWebHostEnvironment webHostEnvironment)
+    {
+        _userManager = userManager;
+        _webHostEnvironment = webHostEnvironment;
+    }
 
     public async Task<IResult> HandleAsync(string userId, UpdateUserCommand command, CancellationToken ct)
     {
@@ -62,19 +72,83 @@ public class UpdateUserCommandHandler
             dateOfBirth = DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
         }
 
+        var oldPhotoUrl = user.PhotoUrl;
+        var photoUrl = user.PhotoUrl;
+        string? uniqueFileName = null;
+        string? extension = null;
+
+        // 1. Pre-calcular la nueva foto si se proporciona una
+        if (command.Photo is not null && command.Photo.Length > 0)
+        {
+            extension = Path.GetExtension(command.Photo.FileName);
+            uniqueFileName = $"{Guid.NewGuid():N}{extension}";
+            photoUrl = $"/uploads/profiles/{uniqueFileName}";
+        }
+
         user.Name        = command.Name;
         user.LastName    = command.LastName;
         user.DateOfBirth = dateOfBirth;
         user.PhoneNumber = command.PhoneNumber;
-        user.PhotoUrl    = command.PhotoUrl;
+        user.PhotoUrl    = photoUrl;
         user.Address     = command.Address;
 
+        // 2. Guardar en base de datos primero
         var result = await _userManager.UpdateAsync(user);
 
         if (!result.Succeeded)
         {
             var errors = result.Errors.ToDictionary(e => e.Code, e => new[] { e.Description });
             return Results.ValidationProblem(errors);
+        }
+
+        // 3. Físicamente guardar el archivo localmente si la base de datos tuvo éxito
+        if (command.Photo is not null && command.Photo.Length > 0 && uniqueFileName is not null)
+        {
+            try
+            {
+                var webRootPath = _webHostEnvironment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var uploadsFolder = Path.Combine(webRootPath, "uploads", "profiles");
+
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await command.Photo.CopyToAsync(stream, ct);
+                }
+
+                // Borrar el archivo viejo si existe
+                if (!string.IsNullOrWhiteSpace(oldPhotoUrl))
+                {
+                    var oldFilePath = Path.Combine(webRootPath, oldPhotoUrl.TrimStart('/'));
+                    if (File.Exists(oldFilePath))
+                    {
+                        try
+                        {
+                            File.Delete(oldFilePath);
+                        }
+                        catch
+                        {
+                            // Ignorar error al borrar el viejo, no es crítico
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Rollback: revertir el path de foto y guardar de nuevo
+                user.PhotoUrl = oldPhotoUrl;
+                await _userManager.UpdateAsync(user);
+
+                return Results.Problem(
+                    title: "Error al almacenar la nueva foto de perfil",
+                    detail: "El perfil no pudo ser actualizado debido a un problema físico al intentar guardar su imagen en el servidor.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
         }
 
         return Results.Ok(new UpdateUserResponse(

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using SamplVSSkill.Infrastructure.Middleware;
 
 namespace SamplVSSkill.Features.Insurers.CreateInsurer;
@@ -6,6 +7,7 @@ public static class CreateInsurerEndpoint
 {
     public static void Map(IEndpointRouteBuilder app) =>
         app.MapPost("/api/insurers", Handle)
+           .DisableAntiforgery()
            .AddEndpointFilter<ValidationFilter<CreateInsurerCommand>>()
            .WithTags("Insurers")
            .WithName("CreateInsurer")
@@ -15,11 +17,10 @@ public static class CreateInsurerEndpoint
            //.RequireAuthorization();
 
     private static async Task<IResult> Handle(
-        CreateInsurerCommand command,
+        [FromForm] CreateInsurerCommand command,
         CreateInsurerCommandHandler handler,
         CancellationToken ct)
     {
-        var response = await handler.HandleAsync(command, ct);
-        return Results.Created($"/api/insurers/{response.Id}", response);
+        return await handler.HandleAsync(command, ct);
     }
 }

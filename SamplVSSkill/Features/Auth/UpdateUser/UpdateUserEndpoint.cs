@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace SamplVSSkill.Features.Auth.UpdateUser;
 
 public static class UpdateUserEndpoint
 {
     public static void Map(IEndpointRouteBuilder app) =>
         app.MapPut("/api/auth/users/{id}", Handle)
+           .DisableAntiforgery()
            .WithTags("Users")
            .WithName("UpdateUser")
            .Produces<UpdateUserResponse>()
@@ -14,7 +17,7 @@ public static class UpdateUserEndpoint
 
     private static async Task<IResult> Handle(
         string id,
-        UpdateUserCommand command,
+        [FromForm] UpdateUserCommand command,
         UpdateUserCommandHandler handler,
         CancellationToken ct)
         => await handler.HandleAsync(id, command, ct);

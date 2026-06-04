@@ -36,7 +36,7 @@ public static class ServiceCollectionExtensions
                 options.Password.RequireDigit            = true;  // Al menos un dígito (0-9)
                 options.Password.RequiredLength          = 8;     // Mínimo 8 caracteres
             })
-            .AddRoles<IdentityRole>()                          // enables RoleManager<IdentityRole>
+            .AddRoles<ApplicationRole>()                          // enables RoleManager<ApplicationRole>
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();                       // enables password reset tokens
 

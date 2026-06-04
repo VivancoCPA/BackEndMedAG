@@ -1,16 +1,17 @@
 using Microsoft.AspNetCore.Identity;
+using SamplVSSkill.Domain.Entities;
 
 namespace SamplVSSkill.Features.Auth.DeleteRole;
 
-// ── Response ────────────────────────────────────────────────────
+// ── Request / Response ──────────────────────────────────────────
 public record DeleteRoleResponse(string RoleName, string Message);
 
 // ── Command Handler ─────────────────────────────────────────────
 public class DeleteRoleCommandHandler
 {
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
 
-    public DeleteRoleCommandHandler(RoleManager<IdentityRole> roleManager) =>
+    public DeleteRoleCommandHandler(RoleManager<ApplicationRole> roleManager) =>
         _roleManager = roleManager;
 
     public async Task<IResult> HandleAsync(string roleName, CancellationToken ct)

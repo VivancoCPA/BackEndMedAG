@@ -15,10 +15,15 @@ Se excluyen explícitamente los endpoints de gestión de roles que no operan sob
   - [Actualizar Información de Usuario (`PUT /api/auth/users/{id}`)](#actualizar-información-de-usuario-put-apiauthusersid)
   - [Activar o Bloquear Usuario (`PATCH /api/users/{userId}/toggle-status`)](#activar-o-bloquear-usuario-patch-apiusersuseridtoggle-status)
   - [Creación Administrativa de Usuario (`POST /api/auth/users`)](#creación-administrativa-de-usuario-post-apiauthusers)
-- [2. Gestión de Roles del Usuario (Tag: `Users`)](#2-gestión-de-roles-del-usuario-tag-users)
+- [2. Gestión de Roles (Tags: `Users` / `Roles`)](#2-gestión-de-roles-tags-users--roles)
+  - [Listar Todos los Roles (`GET /api/roles`)](#listar-todos-los-roles-get-apiroles)
+  - [Crear un Rol (`POST /api/roles`)](#crear-un-rol-post-apiroles)
+  - [Actualizar un Rol (`PUT /api/roles/{id}`)](#actualizar-un-rol-put-apirolesid)
+  - [Activar o Inactivar un Rol (`PATCH /api/roles/{id}/toggle-status`)](#activar-o-inactivar-un-rol-patch-apirolesidtoggle-status)
+  - [Eliminar un Rol (`DELETE /api/roles/{roleName}`)](#eliminar-un-rol-delete-apirolesrolename)
   - [Obtener Roles de un Usuario (`GET /api/users/{userId}/roles`)](#obtener-roles-de-un-usuario-get-apiusersuseridroles)
   - [Asignar Rol a un Usuario (`POST /api/users/{userId}/roles`)](#asignar-rol-a-un-usuario-post-apiusersuseridroles)
-  - [Remover Rol de un Usuario (`DELETE /api/users/{userId}/roles/{roleName}`)](#remover-rol-de-un-usuario-delete-apiusersuseridrolesrolename)
+  - [Remover Rol de un Usuario (`DELETE /api/users/{userId}/roles/{roleName}`)] (#remover-rol-de-un-usuario-delete-apiusersuseridrolesrolename)
 - [3. Gestión de Claims del Usuario (Tag: `Users`)](#3-gestión-de-claims-del-usuario-tag-users)
   - [Obtener Claims de un Usuario (`GET /api/users/{userId}/claims`)](#obtener-claims-de-un-usuario-get-apiusersuseridclaims)
   - [Asignar Claim a un Usuario (`POST /api/users/{userId}/claims`)](#asignar-claim-a-un-usuario-post-apiusersuseridclaims)
@@ -174,22 +179,28 @@ Retorna un objeto `PaginatedResult<PagedUserItem>` que incluye metadatos de la p
 *   **Parámetros de Ruta:**
     *   `id` (string, Requerido): ID único del usuario a actualizar.
 
-#### Cuerpo de la Solicitud (Request Body - JSON)
-Objeto `UpdateUserCommand` con los campos actualizables:
-```json
-{
-  "name": "Juan",
-  "lastName": "Pérez",
-  "dateOfBirth": "1990-05-15",
-  "phoneNumber": "+1234567890",
-  "photoUrl": "https://example.com/avatar.jpg",
-  "address": "Calle Falsa 123"
-}
-```
-*   **Validaciones:**
-    *   `name`: Obligatorio, longitud máxima 100 caracteres.
-    *   `lastName`: Obligatorio, longitud máxima 100 caracteres.
-    *   `dateOfBirth`: Opcional, debe tener un formato de fecha válido `yyyy-MM-dd`.
+#### Cuerpo de la Solicitud (FormData / `multipart/form-data`)
+La petición debe enviarse codificada como formulario (`multipart/form-data`) con los siguientes campos:
+
+*   `name` (string, Requerido): Nombre del usuario. Máx. 100 caracteres.
+*   `lastName` (string, Requerido): Apellido del usuario. Máx. 100 caracteres.
+*   `dateOfBirth` (string, Opcional): Fecha de nacimiento en formato `yyyy-MM-dd`.
+*   `phoneNumber` (string, Opcional): Teléfono del usuario.
+*   `photo` (file / IFormFile, Opcional): Nuevo archivo de imagen para la foto de perfil. Si se omite, se conserva la foto de perfil actual.
+*   `address` (string, Opcional): Dirección del usuario.
+
+> [!IMPORTANT]
+> **Recomendación para el FrontEnd (React / JS / TS)**:
+> Al enviar un formulario con archivos utilizando `FormData`, **NO debes definir manualmente la cabecera `'Content-Type'`** en la petición. El navegador se encargará de inyectar `multipart/form-data` junto con el parámetro `boundary`.
+
+#### Comportamiento
+*   Valida los campos obligatorios del formulario.
+*   Si se proporciona una nueva foto en `photo`:
+    *   Primero se guardan los datos textuales y el nuevo path en la base de datos.
+    *   Se escribe el archivo de imagen físicamente en el servidor (`wwwroot/uploads/profiles/`).
+    *   Si se guarda correctamente, se elimina el archivo de imagen anterior del usuario (si poseía una) para evitar almacenamiento basura.
+    *   **Atomicidad**: Si la escritura física del nuevo archivo falla, se realiza un rollback automático restaurando el path de la imagen anterior en la base de datos y se devuelve un `500 Internal Server Error`.
+*   Si `photo` es nulo, los datos de usuario se actualizan y se conserva la imagen que ya poseía.
 
 #### Respuesta Exitosa (`200 OK`)
 Retorna `UpdateUserResponse` confirmando los cambios realizados:
@@ -201,7 +212,7 @@ Retorna `UpdateUserResponse` confirmando los cambios realizados:
   "lastName": "Pérez",
   "dateOfBirth": "1990-05-15T00:00:00Z",
   "phoneNumber": "+1234567890",
-  "photoUrl": "https://example.com/avatar.jpg",
+  "photoUrl": "/uploads/profiles/7a2be748f65e2b1a42c398fed27e7fcd.jpg",
   "address": "Calle Falsa 123"
 }
 ```
@@ -209,6 +220,7 @@ Retorna `UpdateUserResponse` confirmando los cambios realizados:
 #### Otras Respuestas
 *   **`400 Bad Request`**: Datos inválidos en el cuerpo (problema de validación).
 *   **`404 Not Found`**: El usuario no existe en el sistema.
+*   **`500 Internal Server Error`**: Ocurrió un error físico en el disco al guardar la nueva imagen, resultando en un rollback del registro a su estado anterior.
 
 ---
 
@@ -287,7 +299,165 @@ Retorna `CreateUserResponse` con los detalles del usuario creado e incluye la ru
 
 ---
 
-## 2. Gestión de Roles del Usuario (Tag: `Users`)
+## 2. Gestión de Roles (Tags: `Users` / `Roles`)
+
+### Listar Todos los Roles (`GET /api/roles`)
+
+*   **Ruta:** `GET /api/roles`
+*   **Nombre de Acción:** `ListRoles`
+*   **Autorización:** Ninguna (Acceso Público, utilizado por el frontend para mostrar roles en dropdowns).
+
+#### Respuesta Exitosa (`200 OK`)
+Devuelve una lista de todos los roles registrados en el sistema, incluyendo el conteo total de usuarios asignados a cada uno (`ListRolesResponse`):
+
+```json
+[
+  {
+    "id": "admin-role-uuid-1111",
+    "name": "Admin",
+    "description": "Administrador del sistema con acceso total",
+    "isActive": true,
+    "createdAt": "2026-06-02T03:28:12Z",
+    "assignedUsersCount": 3
+  },
+  {
+    "id": "user-role-uuid-2222",
+    "name": "User",
+    "description": "Usuario estándar de la plataforma",
+    "isActive": true,
+    "createdAt": "2026-06-02T03:28:12Z",
+    "assignedUsersCount": 42
+  }
+]
+```
+
+---
+
+### Crear un Rol (`POST /api/roles`)
+
+*   **Ruta:** `POST /api/roles`
+*   **Nombre de Acción:** `CreateRole`
+*   **Autorización:** Requerido (`.RequireAuthorization()`)
+
+#### Cuerpo de la Solicitud (Request Body - JSON)
+```json
+{
+  "roleName": "Admin",
+  "description": "Administrador del sistema con acceso total",
+  "isActive": true
+}
+```
+*   **Validaciones:**
+    *   `roleName`: Requerido, no vacío, máximo 50 caracteres.
+    *   `description`: Opcional, por defecto cadena vacía.
+    *   `isActive`: Opcional, por defecto `true`.
+
+#### Respuesta Exitosa (`201 Created`)
+Retorna un objeto `CreateRoleResponse` con los detalles del rol creado:
+```json
+{
+  "id": "admin-role-uuid-1111",
+  "name": "Admin",
+  "description": "Administrador del sistema con acceso total",
+  "isActive": true,
+  "createdAt": "2026-06-02T03:28:12Z"
+}
+```
+
+#### Otras Respuestas
+*   **`400 Bad Request`**: Datos de solicitud inválidos.
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`409 Conflict`**: Ya existe un rol con el nombre provisto en `roleName`.
+
+---
+
+### Actualizar un Rol (`PUT /api/roles/{id}`)
+
+*   **Ruta:** `PUT /api/roles/{id}`
+*   **Nombre de Acción:** `UpdateRole`
+*   **Autorización:** Requerido (`.RequireAuthorization()`)
+*   **Parámetros de Ruta:**
+    *   `id` (string, Requerido): ID único del rol a actualizar.
+
+#### Cuerpo de la Solicitud (Request Body - JSON)
+```json
+{
+  "roleName": "Admin Modificado",
+  "description": "Nueva descripción para el rol",
+  "isActive": true
+}
+```
+*   **Validaciones:**
+    *   `roleName`: Requerido, no vacío, máximo 50 caracteres.
+
+#### Respuesta Exitosa (`200 OK`)
+Retorna un objeto `UpdateRoleResponse` con los datos actualizados del rol:
+```json
+{
+  "id": "admin-role-uuid-1111",
+  "name": "Admin Modificado",
+  "description": "Nueva descripción para el rol",
+  "isActive": true,
+  "createdAt": "2026-06-02T03:28:12Z"
+}
+```
+
+#### Otras Respuestas
+*   **`400 Bad Request`**: Datos inválidos en la solicitud.
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`404 Not Found`**: No se encuentra un rol con el `id` provisto.
+*   **`409 Conflict`**: Ya existe otro rol con el nuevo nombre provisto en `roleName`.
+
+---
+
+### Activar o Inactivar un Rol (`PATCH /api/roles/{id}/toggle-status`)
+
+*   **Ruta:** `PATCH /api/roles/{id}/toggle-status`
+*   **Nombre de Acción:** `ToggleRoleStatus`
+*   **Autorización:** Requerido (`.RequireAuthorization()`)
+*   **Parámetros de Ruta:**
+    *   `id` (string, Requerido): ID único del rol a activar/inactivar.
+
+#### Respuesta Exitosa (`200 OK`)
+Devuelve un objeto `ToggleRoleStatusResponse` con el estado actualizado del rol:
+```json
+{
+  "id": "admin-role-uuid-1111",
+  "name": "Admin",
+  "isActive": false,
+  "status": "Inactivado"
+}
+```
+
+#### Otras Respuestas
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`404 Not Found`**: No se encuentra un rol con el `id` provisto.
+
+---
+
+### Eliminar un Rol (`DELETE /api/roles/{roleName}`)
+
+*   **Ruta:** `DELETE /api/roles/{roleName}`
+*   **Nombre de Acción:** `DeleteRole`
+*   **Autorización:** Requerido (`.RequireAuthorization()`)
+*   **Parámetros de Ruta:**
+    *   `roleName` (string, Requerido): Nombre del rol a eliminar globalmente de la aplicación.
+
+#### Respuesta Exitosa (`200 OK`)
+Retorna un objeto `DeleteRoleResponse` confirmando la eliminación del rol:
+```json
+{
+  "roleName": "Admin",
+  "message": "Rol eliminado correctamente."
+}
+```
+
+#### Otras Respuestas
+*   **`400 Bad Request`**: Error de validación o dependencias en la base de datos (por ejemplo, si el rol tiene usuarios asignados).
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`404 Not Found`**: No se encuentra un rol con el `roleName` provisto.
+
+---
 
 ### Obtener Roles de un Usuario (`GET /api/users/{userId}/roles`)
 

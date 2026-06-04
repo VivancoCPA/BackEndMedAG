@@ -9,7 +9,7 @@ namespace SamplVSSkill.Infrastructure.Persistence;
 /// EF Core DbContext used for Commands (INSERT, UPDATE, DELETE) and Identity management.
 /// Queries (SELECT) are handled by Dapper via DapperConnectionFactory.
 /// </summary>
-public class AppDbContext : IdentityDbContext<AppUser>
+public class AppDbContext : IdentityDbContext<AppUser, ApplicationRole, string>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

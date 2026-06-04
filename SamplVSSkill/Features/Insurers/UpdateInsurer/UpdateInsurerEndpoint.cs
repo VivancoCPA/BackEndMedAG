@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using SamplVSSkill.Infrastructure.Middleware;
 
 namespace SamplVSSkill.Features.Insurers.UpdateInsurer;
@@ -6,6 +7,7 @@ public static class UpdateInsurerEndpoint
 {
     public static void Map(IEndpointRouteBuilder app) =>
         app.MapPut("/api/insurers/{id:guid}", Handle)
+           .DisableAntiforgery()
            .AddEndpointFilter<ValidationFilter<UpdateInsurerCommand>>()
            .WithTags("Insurers")
            .WithName("UpdateInsurer")
@@ -17,11 +19,10 @@ public static class UpdateInsurerEndpoint
 
     private static async Task<IResult> Handle(
         Guid id,
-        UpdateInsurerCommand command,
+        [FromForm] UpdateInsurerCommand command,
         UpdateInsurerCommandHandler handler,
         CancellationToken ct)
     {
-        var response = await handler.HandleAsync(id, command, ct);
-        return response is not null ? Results.Ok(response) : Results.NotFound();
+        return await handler.HandleAsync(id, command, ct);
     }
 }

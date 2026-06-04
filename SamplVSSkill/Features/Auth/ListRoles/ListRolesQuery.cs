@@ -1,24 +1,43 @@
-using Microsoft.AspNetCore.Identity;
+using Dapper;
+using SamplVSSkill.Infrastructure.Persistence;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SamplVSSkill.Features.Auth.ListRoles;
 
 // ── Response ────────────────────────────────────────────────────
-public record ListRolesResponse(string Id, string Name);
+public record ListRolesResponse(string Id, string Name, string Description, bool IsActive, DateTime CreatedAt, int AssignedUsersCount);
 
 // ── Query Handler ───────────────────────────────────────────────
 public class ListRolesQueryHandler
 {
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly DapperConnectionFactory _connectionFactory;
 
-    public ListRolesQueryHandler(RoleManager<IdentityRole> roleManager) =>
-        _roleManager = roleManager;
+    public ListRolesQueryHandler(DapperConnectionFactory connectionFactory) =>
+        _connectionFactory = connectionFactory;
 
-    public Task<IEnumerable<ListRolesResponse>> HandleAsync(CancellationToken ct)
+    public async Task<IEnumerable<ListRolesResponse>> HandleAsync(CancellationToken ct)
     {
-        var roles = _roleManager.Roles
-            .Select(r => new ListRolesResponse(r.Id, r.Name!))
-            .AsEnumerable();
+        using var connection = _connectionFactory.CreateConnection();
 
-        return Task.FromResult(roles);
+        const string sql = """
+            SELECT r."Id"                   AS Id,
+                   r."Name"                 AS Name,
+                   r."Description"          AS Description,
+                   r."IsActive"             AS IsActive,
+                   r."CreatedAt"            AS CreatedAt,
+                   COUNT(ur."UserId")::int  AS AssignedUsersCount
+            FROM "AspNetRoles" r
+            LEFT JOIN "AspNetUserRoles" ur ON r."Id" = ur."RoleId"
+            GROUP BY r."Id", r."Name", r."Description", r."IsActive", r."CreatedAt"
+            ORDER BY r."Name"
+            """;
+
+        var roles = await connection.QueryAsync<ListRolesResponse>(
+            new CommandDefinition(sql, cancellationToken: ct));
+
+        return roles;
     }
 }
+

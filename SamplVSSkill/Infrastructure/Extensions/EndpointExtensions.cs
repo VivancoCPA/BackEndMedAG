@@ -7,6 +7,8 @@ using SamplVSSkill.Features.Auth.ResetPassword;
 using SamplVSSkill.Features.Auth.CreateRole;
 using SamplVSSkill.Features.Auth.ListRoles;
 using SamplVSSkill.Features.Auth.DeleteRole;
+using SamplVSSkill.Features.Auth.UpdateRole;
+using SamplVSSkill.Features.Auth.ToggleRoleStatus;
 using SamplVSSkill.Features.Auth.AssignRole;
 using SamplVSSkill.Features.Auth.RemoveRole;
 using SamplVSSkill.Features.Auth.GetUserRoles;
@@ -96,6 +98,8 @@ public static class EndpointExtensions
         CreateRoleEndpoint.Map(app);
         ListRolesEndpoint.Map(app);
         DeleteRoleEndpoint.Map(app);
+        UpdateRoleEndpoint.Map(app);
+        ToggleRoleStatusEndpoint.Map(app);
 
         // ── User-Role ──
         AssignRoleEndpoint.Map(app);
@@ -207,6 +211,8 @@ public static class EndpointExtensions
         services.AddScoped<CreateRoleCommandHandler>();
         services.AddScoped<ListRolesQueryHandler>();
         services.AddScoped<DeleteRoleCommandHandler>();
+        services.AddScoped<UpdateRoleCommandHandler>();
+        services.AddScoped<ToggleRoleStatusCommandHandler>();
 
         // ── User-Role ──
         services.AddScoped<AssignRoleCommandHandler>();
