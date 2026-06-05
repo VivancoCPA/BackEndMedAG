@@ -19,9 +19,13 @@ public class GetDoctorQueryHandler
         using var connection = _connectionFactory.CreateConnection();
 
         const string sql = """
-            SELECT id AS Id, name AS Name, specialty AS Specialty, is_vet AS IsVet
-            FROM doctors
-            WHERE id = @Id
+            SELECT d.id AS Id,
+                   d.name AS Name,
+                   s.name AS Specialty,
+                   d.is_vet AS IsVet
+            FROM doctors d
+            LEFT JOIN specialties s ON d.specialty_id = s.id
+            WHERE d.id = @Id
             """;
 
         return await connection.QueryFirstOrDefaultAsync<GetDoctorResponse>(

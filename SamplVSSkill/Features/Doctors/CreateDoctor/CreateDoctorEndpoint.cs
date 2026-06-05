@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using SamplVSSkill.Infrastructure.Middleware;
 
 namespace SamplVSSkill.Features.Doctors.CreateDoctor;
@@ -6,6 +7,7 @@ public static class CreateDoctorEndpoint
 {
     public static void Map(IEndpointRouteBuilder app) =>
         app.MapPost("/api/doctors", Handle)
+           .DisableAntiforgery()
            .AddEndpointFilter<ValidationFilter<CreateDoctorCommand>>()// valida request antes de ejecutar handler
            .WithTags("Doctors")// define el nombre de la etiqueta para agrupar endpoints en la documentacion
            .WithName("CreateDoctor")// define el nombre del endpoint para generar url
@@ -15,11 +17,10 @@ public static class CreateDoctorEndpoint
            //.RequireAuthorization();// requiere autorizacion
 
     private static async Task<IResult> Handle(
-        CreateDoctorCommand command,
+        [FromForm] CreateDoctorCommand command,
         CreateDoctorCommandHandler handler,
         CancellationToken ct)
     {
-        var response = await handler.HandleAsync(command, ct);
-        return Results.Created($"/api/doctors/{response.Id}", response);
+        return await handler.HandleAsync(command, ct);
     }
 }
