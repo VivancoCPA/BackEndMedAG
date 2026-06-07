@@ -396,6 +396,56 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                     b.ToTable("doctor_affiliations", (string)null);
                 });
 
+            modelBuilder.Entity("SamplVSSkill.Domain.Entities.FamilyExtraMembership", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<Guid>("FamilyGroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_group_id");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("full_name");
+
+                    b.Property<string>("IdType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("id_type");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("PhotoUrl")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("photo_url");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FamilyGroupId");
+
+                    b.ToTable("family_extra_memberships", (string)null);
+                });
+
             modelBuilder.Entity("SamplVSSkill.Domain.Entities.FamilyGroup", b =>
                 {
                     b.Property<Guid>("Id")
@@ -442,9 +492,19 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
                     b.Property<Guid>("FamilyGroupId")
                         .HasColumnType("uuid")
                         .HasColumnName("family_group_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
 
                     b.Property<bool>("IsAdmin")
                         .ValueGeneratedOnAdd()
@@ -465,7 +525,7 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("FamilyGroupId");
 
-                    b.HasIndex("UserId", "FamilyGroupId")
+                    b.HasIndex("UserId")
                         .IsUnique();
 
                     b.ToTable("family_memberships", (string)null);
@@ -593,7 +653,8 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("description");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -708,6 +769,17 @@ namespace SamplVSSkill.Infrastructure.Persistence.Migrations
                     b.Navigation("Doctor");
 
                     b.Navigation("MedicalCenter");
+                });
+
+            modelBuilder.Entity("SamplVSSkill.Domain.Entities.FamilyExtraMembership", b =>
+                {
+                    b.HasOne("SamplVSSkill.Domain.Entities.FamilyGroup", "FamilyGroup")
+                        .WithMany()
+                        .HasForeignKey("FamilyGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FamilyGroup");
                 });
 
             modelBuilder.Entity("SamplVSSkill.Domain.Entities.FamilyGroup", b =>

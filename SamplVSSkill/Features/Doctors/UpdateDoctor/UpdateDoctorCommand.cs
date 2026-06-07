@@ -3,10 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SamplVSSkill.Infrastructure.Persistence;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,7 +29,7 @@ public record UpdateDoctorCommand
     public IFormFile? Photo { get; init; }
     public bool IsVet { get; init; }
     public bool IsActive { get; init; }
-    public string? Centers { get; init; } // Cadena JSON representando el arreglo de DoctorAffiliationRequest para permitir la unión en FromForm
+    public List<DoctorAffiliationRequest>? Centers { get; init; }
 }
 
 public record UpdateDoctorResponse(
@@ -63,87 +61,68 @@ public class UpdateDoctorCommandHandler
     public async Task<IResult> HandleAsync(
         Guid id, UpdateDoctorCommand command, CancellationToken ct)
     {
-        // Deserializar las afiliaciones desde la cadena JSON si existe
-        List<DoctorAffiliationRequest>? requestedCenters = null;
-        if (!string.IsNullOrWhiteSpace(command.Centers))
+        var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.Id == id, ct);
+        if (doctor is null)
+            return Results.NotFound($"Doctor con ID '{id}' no encontrado.");
+
+        var oldPhotoUrl = doctor.PhotoUrl;
+        var photoUrl = doctor.PhotoUrl;
+        string? uniqueFileName = null;
+        string? extension = null;
+
+        // 1. Pre-calcular el nuevo path si se proporciona una nueva foto
+        if (command.Photo is not null && command.Photo.Length > 0)
         {
-            try
+            extension = Path.GetExtension(command.Photo.FileName);
+            uniqueFileName = $"{Guid.NewGuid():N}{extension}";
+            photoUrl = $"/uploads/doctors/{uniqueFileName}";
+        }
+
+        doctor.Name        = command.Name;
+        doctor.LastName    = command.LastName;
+        doctor.SpecialtyId = command.SpecialtyId;
+        doctor.Register    = command.Register;
+        doctor.Phone       = command.Phone;
+        doctor.Email       = command.Email;
+        doctor.PhotoUrl    = photoUrl;
+        doctor.IsVet       = command.IsVet;
+        doctor.IsActive    = command.IsActive;
+
+        // Sincronizar afiliaciones
+        var existingAffiliations = await _db.DoctorAffiliations.Where(a => a.DoctorId == doctor.Id).ToListAsync(ct);
+        var requestedCenters = command.Centers ?? new List<DoctorAffiliationRequest>();
+
+        var toRemove = existingAffiliations.Where(e => !requestedCenters.Any(r => r.Id == e.CenterId)).ToList();
+        _db.DoctorAffiliations.RemoveRange(toRemove);
+
+        foreach (var req in requestedCenters)
+        {
+            var existing = existingAffiliations.FirstOrDefault(e => e.CenterId == req.Id);
+            if (existing != null)
             {
-                requestedCenters = JsonSerializer.Deserialize<List<DoctorAffiliationRequest>>(
-                    command.Centers,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                existing.OfficeNumber = req.OfficeNumber;
+                existing.WorkSchedule = req.WorkSchedule;
             }
-            catch (Exception)
+            else
             {
-                return Results.BadRequest("El campo 'Centers' debe ser una cadena JSON válida que represente una lista de afiliaciones.");
+                _db.DoctorAffiliations.Add(new SamplVSSkill.Domain.Entities.DoctorAffiliation
+                {
+                    DoctorId = doctor.Id,
+                    CenterId = req.Id,
+                    OfficeNumber = req.OfficeNumber,
+                    WorkSchedule = req.WorkSchedule,
+                    CreatedAt = DateTime.UtcNow
+                });
             }
         }
-        requestedCenters ??= new List<DoctorAffiliationRequest>();
 
-        // Iniciar transacción de base de datos para atomicidad perfecta
-        using var transaction = await _db.Database.BeginTransactionAsync(ct);
-        string? uniqueFileName = null;
+        // 2. Guardar en base de datos primero
+        await _db.SaveChangesAsync(ct);
 
-        try
+        // 3. Físicamente guardar el archivo localmente si la base de datos tuvo éxito
+        if (command.Photo is not null && command.Photo.Length > 0 && uniqueFileName is not null)
         {
-            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.Id == id, ct);
-            if (doctor is null)
-                return Results.NotFound($"Doctor con ID '{id}' no encontrado.");
-
-            var oldPhotoUrl = doctor.PhotoUrl;
-            var photoUrl = doctor.PhotoUrl;
-            string? extension = null;
-
-            // 1. Pre-calcular el nuevo path si se proporciona una nueva foto
-            if (command.Photo is not null && command.Photo.Length > 0)
-            {
-                extension = Path.GetExtension(command.Photo.FileName);
-                uniqueFileName = $"{Guid.NewGuid():N}{extension}";
-                photoUrl = $"/uploads/doctors/{uniqueFileName}";
-            }
-
-            doctor.Name        = command.Name;
-            doctor.LastName    = command.LastName;
-            doctor.SpecialtyId = command.SpecialtyId;
-            doctor.Register    = command.Register;
-            doctor.Phone       = command.Phone;
-            doctor.Email       = command.Email;
-            doctor.PhotoUrl    = photoUrl;
-            doctor.IsVet       = command.IsVet;
-            doctor.IsActive    = command.IsActive;
-
-            // Sincronizar afiliaciones
-            var existingAffiliations = await _db.DoctorAffiliations.Where(a => a.DoctorId == doctor.Id).ToListAsync(ct);
-
-            var toRemove = existingAffiliations.Where(e => !requestedCenters.Any(r => r.Id == e.CenterId)).ToList();
-            _db.DoctorAffiliations.RemoveRange(toRemove);
-
-            foreach (var req in requestedCenters)
-            {
-                var existing = existingAffiliations.FirstOrDefault(e => e.CenterId == req.Id);
-                if (existing != null)
-                {
-                    existing.OfficeNumber = req.OfficeNumber;
-                    existing.WorkSchedule = req.WorkSchedule;
-                }
-                else
-                {
-                    _db.DoctorAffiliations.Add(new SamplVSSkill.Domain.Entities.DoctorAffiliation
-                    {
-                        DoctorId = doctor.Id,
-                        CenterId = req.Id,
-                        OfficeNumber = req.OfficeNumber,
-                        WorkSchedule = req.WorkSchedule,
-                        CreatedAt = DateTime.UtcNow
-                    });
-                }
-            }
-
-            // 2. Guardar en base de datos primero (dentro de la transacción)
-            await _db.SaveChangesAsync(ct);
-
-            // 3. Físicamente guardar el archivo localmente si la base de datos tuvo éxito
-            if (command.Photo is not null && command.Photo.Length > 0 && uniqueFileName is not null)
+            try
             {
                 var webRootPath = _webHostEnvironment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
                 var uploadsFolder = Path.Combine(webRootPath, "uploads", "doctors");
@@ -177,42 +156,22 @@ public class UpdateDoctorCommandHandler
                     }
                 }
             }
-
-            // Confirmar transacción de base de datos si la escritura en disco fue exitosa
-            await transaction.CommitAsync(ct);
-
-            return Results.Ok(new UpdateDoctorResponse(
-                doctor.Id, doctor.Name, doctor.LastName, doctor.SpecialtyId,
-                doctor.Register, doctor.Phone, doctor.Email, doctor.PhotoUrl,
-                doctor.IsVet, doctor.IsActive, doctor.CreatedAt, doctor.UpdatedAt));
-        }
-        catch (Exception)
-        {
-            // Rollback de base de datos
-            await transaction.RollbackAsync(ct);
-
-            // Limpieza de archivo físico si se llegó a crear antes del fallo de commit
-            if (uniqueFileName is not null)
+            catch (Exception)
             {
-                try
-                {
-                    var webRootPath = _webHostEnvironment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-                    var filePath = Path.Combine(webRootPath, "uploads", "doctors", uniqueFileName);
-                    if (File.Exists(filePath))
-                    {
-                        File.Delete(filePath);
-                    }
-                }
-                catch
-                {
-                    // Ignorar error al limpiar
-                }
-            }
+                // Rollback: revertir el PhotoUrl en base de datos
+                doctor.PhotoUrl = oldPhotoUrl;
+                await _db.SaveChangesAsync(ct);
 
-            return Results.Problem(
-                title: "Error al actualizar el doctor",
-                detail: "El doctor no pudo ser actualizado debido a un problema en la base de datos o en el almacenamiento físico.",
-                statusCode: StatusCodes.Status500InternalServerError);
+                return Results.Problem(
+                    title: "Error al almacenar la nueva foto del doctor",
+                    detail: "El doctor no pudo ser actualizado debido a un problema físico al intentar guardar su foto en el servidor.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
         }
+
+        return Results.Ok(new UpdateDoctorResponse(
+            doctor.Id, doctor.Name, doctor.LastName, doctor.SpecialtyId,
+            doctor.Register, doctor.Phone, doctor.Email, doctor.PhotoUrl,
+            doctor.IsVet, doctor.IsActive, doctor.CreatedAt, doctor.UpdatedAt));
     }
 }

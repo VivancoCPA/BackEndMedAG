@@ -79,6 +79,7 @@ Retorna una lista `IEnumerable<ListCenterTypesResponse>` de todos los tipos de c
     *   `page` (int, Opcional, por defecto `1`): Número de página. Debe ser mayor o igual a 1.
     *   `pageSize` (int, Opcional, por defecto `10`): Tamaño de la página. Debe estar entre 1 y 100.
     *   `search` (string, Opcional): Filtro de búsqueda insensible a mayúsculas/minúsculas sobre la columna `name` (`ILIKE`).
+    *   `isActive` (bool, Opcional): Filtro por estado activo/inactivo (`true` para traer solo activos, `false` para traer solo inactivos, u omitido/`null` para traer ambos estados).
     *   `sortBy` (string, Opcional, por defecto `created_at`): Campo por el cual ordenar. Columnas permitidas: `name`, `isActive` (o `isactive`), `created_at`, `updated_at`.
     *   `sortDesc` (bool, Opcional, por defecto `false`): Determina si la ordenación es descendente (`true`) o ascendente (`false`).
 

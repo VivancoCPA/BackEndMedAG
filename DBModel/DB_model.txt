@@ -15,6 +15,20 @@ Table family_memberships {
   family_group_id uuid [ref: > family_groups.id]
   is_admin boolean [default: false]
   relationship varchar
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+}
+
+Table family_extra_memberships {
+  id serial [pk]
+  id_type varchar
+  full_name varchar
+  photo_url text
+  family_group_id uuid [ref: > family_groups.id]
+  description varchar
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  
 }
 
 // --- AnimalCare (Mascotas) ---

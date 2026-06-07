@@ -9,6 +9,7 @@ public record PagedCenterTypesParams(
     int Page = 1,
     int PageSize = 10,
     string? Search = null,
+    bool? IsActive = null,
     string? SortBy = null,       // null → default: created_at
     bool SortDesc = false);
 
@@ -65,12 +66,29 @@ public class PagedCenterTypesQueryHandler
         dp.Add("Offset", offset);
         if (!string.IsNullOrWhiteSpace(p.Search))
             dp.Add("Search", $"%{p.Search.Trim()}%");
+        if (p.IsActive.HasValue)
+            dp.Add("IsActive", p.IsActive.Value);
         return dp;
     }
 
-    private static string BuildWhereClause(PagedCenterTypesParams p) =>
-        string.IsNullOrWhiteSpace(p.Search) ? string.Empty
-            : "WHERE name ILIKE @Search";
+    private static string BuildWhereClause(PagedCenterTypesParams p)
+    {
+        var conditions = new System.Collections.Generic.List<string>();
+
+        if (!string.IsNullOrWhiteSpace(p.Search))
+        {
+            conditions.Add("name ILIKE @Search");
+        }
+
+        if (p.IsActive.HasValue)
+        {
+            conditions.Add("is_active = @IsActive");
+        }
+
+        return conditions.Count > 0 
+            ? "WHERE " + string.Join(" AND ", conditions) 
+            : string.Empty;
+    }
 
     private static string BuildOrderByClause(PagedCenterTypesParams p)
     {

@@ -22,6 +22,7 @@ public class AppDbContext : IdentityDbContext<AppUser, ApplicationRole, string>
     public DbSet<FamilyGroup> FamilyGroups => Set<FamilyGroup>();
     public DbSet<UserInsurance> UserInsurances => Set<UserInsurance>();
     public DbSet<FamilyMembership> FamilyMemberships => Set<FamilyMembership>();
+    public DbSet<FamilyExtraMembership> FamilyExtraMemberships => Set<FamilyExtraMembership>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -82,7 +83,8 @@ public class AppDbContext : IdentityDbContext<AppUser, ApplicationRole, string>
             entity.Property(e => e.FamilyGroupId).HasColumnName("family_group_id").IsRequired();
             entity.Property(e => e.IsAdmin).HasColumnName("is_admin").HasDefaultValue(false);
             entity.Property(e => e.Relationship).HasColumnName("relationship");
-
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             // FK: FamilyMembership → AppUser
             entity.HasOne(e => e.User)
                   .WithMany()
@@ -95,8 +97,31 @@ public class AppDbContext : IdentityDbContext<AppUser, ApplicationRole, string>
                   .HasForeignKey(e => e.FamilyGroupId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            // Unique index to prevent duplicate user in the same group
-            entity.HasIndex(e => new { e.UserId, e.FamilyGroupId }).IsUnique();
+            // Unique index to prevent duplicate user. One user can only have one membership.
+            entity.HasIndex(e => new { e.UserId }).IsUnique();
+        });
+
+        // ── FamilyMembership ───────────────────────────────────
+        modelBuilder.Entity<FamilyExtraMembership>(entity =>
+        {
+            entity.ToTable("family_extra_memberships");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            entity.Property(e => e.FullName).HasColumnName("full_name").IsRequired();
+            entity.Property(e => e.IdType).HasColumnName("id_type").IsRequired();
+            entity.Property(e => e.PhotoUrl).HasColumnName("photo_url");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.FamilyGroupId).HasColumnName("family_group_id").IsRequired();
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+           
+
+            // FK: FamilyMembership → FamilyGroup
+            entity.HasOne(e => e.FamilyGroup)
+                  .WithMany()
+                  .HasForeignKey(e => e.FamilyGroupId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
         });
 
         // ── CenterType ───────────────────────────────────────

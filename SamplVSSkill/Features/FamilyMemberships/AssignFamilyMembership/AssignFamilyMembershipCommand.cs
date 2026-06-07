@@ -41,12 +41,12 @@ public class AssignFamilyMembershipCommandHandler
         if (!userExists)
             return Results.NotFound($"Usuario '{command.UserId}' no encontrado.");
 
-        // Evitar membresías duplicadas
-        var alreadyMember = await _db.FamilyMemberships
-            .AnyAsync(m => m.FamilyGroupId == familyGroupId && m.UserId == command.UserId, ct);
+        // Evitar que el usuario pertenezca a más de un grupo familiar
+        var alreadyMemberOfAnyGroup = await _db.FamilyMemberships
+            .AnyAsync(m => m.UserId == command.UserId, ct);
 
-        if (alreadyMember)
-            return Results.Conflict($"El usuario ya pertenece a este grupo familiar.");
+        if (alreadyMemberOfAnyGroup)
+            return Results.Conflict($"El usuario ya pertenece a un grupo familiar.");
 
         var membership = new FamilyMembership
         {

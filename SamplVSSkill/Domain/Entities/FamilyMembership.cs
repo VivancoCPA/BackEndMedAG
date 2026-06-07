@@ -15,4 +15,7 @@ public class FamilyMembership
 
     public bool IsAdmin { get; set; } = false;
     public string? Relationship { get; set; }
+
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -3,10 +3,8 @@ using Microsoft.AspNetCore.Http;
 using SamplVSSkill.Domain.Entities;
 using SamplVSSkill.Infrastructure.Persistence;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,7 +28,7 @@ public record CreateDoctorCommand
     public string? Email { get; init; }
     public IFormFile? Photo { get; init; }
     public bool IsVet { get; init; }
-    public string? Centers { get; init; } // Cadena JSON representando el arreglo de DoctorAffiliationRequest para permitir la unión en FromForm
+    public List<DoctorAffiliationRequest>? Centers { get; init; }
 }
 
 public record CreateDoctorResponse(
@@ -63,23 +61,6 @@ public class CreateDoctorCommandHandler
         CreateDoctorCommand command, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
-
-        // Deserializar las afiliaciones desde la cadena JSON si existe
-        List<DoctorAffiliationRequest>? centersList = null;
-        if (!string.IsNullOrWhiteSpace(command.Centers))
-        {
-            try
-            {
-                centersList = JsonSerializer.Deserialize<List<DoctorAffiliationRequest>>(
-                    command.Centers,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            }
-            catch (Exception)
-            {
-                return Results.BadRequest("El campo 'Centers' debe ser una cadena JSON válida que represente una lista de afiliaciones.");
-            }
-        }
-
         string? photoUrl = null;
         string? extension = null;
         string? uniqueFileName = null;
@@ -115,9 +96,9 @@ public class CreateDoctorCommandHandler
 
             _db.Doctors.Add(doctor);
 
-            if (centersList?.Any() == true)
+            if (command.Centers?.Any() == true)
             {
-                foreach (var aff in centersList)
+                foreach (var aff in command.Centers)
                 {
                     _db.DoctorAffiliations.Add(new DoctorAffiliation
                     {

@@ -1,0 +1,30 @@
+[
+    {
+        "id": "MADRE",
+        "label": "Madre"
+    },
+    {
+        "id": "PADRE",
+        "label": "Padre"
+    },
+    {
+        "id": "HIJO_A",
+        "label": "Hijo/a"
+    },
+    {
+        "id": "HERMANO_A",
+        "label": "Hermano/a"
+    },
+    {
+        "id": "CONYUGE",
+        "label": "Cónyuge"
+    },
+    {
+        "id": "SOBRINO_A",
+        "label": "Sobrino/a"
+    },
+    {
+        "id": "TIO_A",
+        "label": "Tio/a"
+    }
+]

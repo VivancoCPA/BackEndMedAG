@@ -1,7 +1,6 @@
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\appsettings.Development.json
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\appsettings.json
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\SamplVSSkill.staticwebassets.endpoints.json
-C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\SamplVSSkill.exe
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\SamplVSSkill.deps.json
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\SamplVSSkill.runtimeconfig.json
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\SamplVSSkill.dll
@@ -134,3 +133,5 @@ C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\samplvsskill\bin\Debug\net10.0\Syste
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\samplvsskill\obj\Debug\net10.0\SamplVSSkill.sourcelink.json
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\SamplVSSkill.staticwebassets.runtime.json
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\obj\Debug\net10.0\compressed\xty43f442z-{0}-u1p769bzz5-u1p769bzz5.gz
+C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\Domain\Raw\parentescos.json
+C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\samplvsskill\bin\Debug\net10.0\SamplVSSkill.exe

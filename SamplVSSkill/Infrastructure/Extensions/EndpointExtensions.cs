@@ -69,12 +69,19 @@ using SamplVSSkill.Features.FamilyGroups.ListFamilyGroups;
 using SamplVSSkill.Features.FamilyGroups.PagedFamilyGroups;
 using SamplVSSkill.Features.FamilyGroups.UpdateFamilyGroup;
 using SamplVSSkill.Features.FamilyGroups.ToggleFamilyGroupStatus;
+using SamplVSSkill.Features.FamilyGroups.GetMyFamilyGroup;
 using SamplVSSkill.Features.UserInsurances.ListUserInsurances;
 using SamplVSSkill.Features.UserInsurances.AssignUserInsurance;
 using SamplVSSkill.Features.UserInsurances.RemoveUserInsurance;
 using SamplVSSkill.Features.FamilyMemberships.AssignFamilyMembership;
 using SamplVSSkill.Features.FamilyMemberships.ListFamilyMemberships;
 using SamplVSSkill.Features.FamilyMemberships.RemoveFamilyMembership;
+using SamplVSSkill.Features.Relationships.ListRelationships;
+using SamplVSSkill.Features.FamilyExtraMemberships.CreateFamilyExtraMembership;
+using SamplVSSkill.Features.FamilyExtraMemberships.UpdateFamilyExtraMembership;
+using SamplVSSkill.Features.FamilyExtraMemberships.RemoveFamilyExtraMembership;
+using SamplVSSkill.Features.FamilyExtraMemberships.ListFamilyExtraMemberships;
+using SamplVSSkill.Features.FamilyExtraMemberships.ToggleFamilyExtraMembershipStatus;
 
 namespace SamplVSSkill.Infrastructure.Extensions;
 
@@ -180,6 +187,7 @@ public static class EndpointExtensions
         PagedFamilyGroupsEndpoint.Map(app);
         UpdateFamilyGroupEndpoint.Map(app);
         ToggleFamilyGroupStatusEndpoint.Map(app);
+        GetMyFamilyGroupEndpoint.Map(app);
 
         // ── User Insurances ──
         ListUserInsurancesEndpoint.Map(app);
@@ -190,6 +198,16 @@ public static class EndpointExtensions
         AssignFamilyMembershipEndpoint.Map(app);
         ListFamilyMembershipsEndpoint.Map(app);
         RemoveFamilyMembershipEndpoint.Map(app);
+
+        // ── Relationships ──
+        ListRelationshipsEndpoint.Map(app);
+
+        // ── Family Extra Memberships ──
+        CreateFamilyExtraMembershipEndpoint.Map(app);
+        UpdateFamilyExtraMembershipEndpoint.Map(app);
+        RemoveFamilyExtraMembershipEndpoint.Map(app);
+        ListFamilyExtraMembershipsEndpoint.Map(app);
+        ToggleFamilyExtraMembershipStatusEndpoint.Map(app);
 
         return app;
     }
@@ -293,6 +311,7 @@ public static class EndpointExtensions
         services.AddScoped<PagedFamilyGroupsQueryHandler>();
         services.AddScoped<UpdateFamilyGroupCommandHandler>();
         services.AddScoped<ToggleFamilyGroupStatusCommandHandler>();
+        services.AddScoped<GetMyFamilyGroupQueryHandler>();
 
         // ── User Insurances ──
         services.AddScoped<ListUserInsurancesQueryHandler>();
@@ -303,6 +322,16 @@ public static class EndpointExtensions
         services.AddScoped<AssignFamilyMembershipCommandHandler>();
         services.AddScoped<ListFamilyMembershipsQueryHandler>();
         services.AddScoped<RemoveFamilyMembershipCommandHandler>();
+
+        // ── Relationships ──
+        services.AddScoped<ListRelationshipsQueryHandler>();
+
+        // ── Family Extra Memberships ──
+        services.AddScoped<CreateFamilyExtraMembershipCommandHandler>();
+        services.AddScoped<UpdateFamilyExtraMembershipCommandHandler>();
+        services.AddScoped<RemoveFamilyExtraMembershipCommandHandler>();
+        services.AddScoped<ListFamilyExtraMembershipsQueryHandler>();
+        services.AddScoped<ToggleFamilyExtraMembershipStatusCommandHandler>();
 
         return services;
     }
