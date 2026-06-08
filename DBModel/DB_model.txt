@@ -196,3 +196,8 @@ Table user_insurances {
   CreatedAt timestamp [default: `now()`]
 }
 
+Table user_scope {
+  id int [pk]
+  user_id_admin text [ref: > AspNetUsers.Id]
+  user_id text [ref: > AspNetUsers.Id]
+}

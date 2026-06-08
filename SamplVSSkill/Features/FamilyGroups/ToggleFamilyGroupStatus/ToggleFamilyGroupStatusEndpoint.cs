@@ -3,7 +3,7 @@ namespace SamplVSSkill.Features.FamilyGroups.ToggleFamilyGroupStatus;
 public static class ToggleFamilyGroupStatusEndpoint
 {
     public static void Map(IEndpointRouteBuilder app) =>
-        app.MapPatch("/api/family-groups/{id:guid}/toggle", Handle)
+        app.MapPatch("/api/family-groups/{id:guid}/toggle-status", Handle)
            .WithTags("Family Groups")
            .WithName("ToggleFamilyGroupStatus")
            .Produces<ToggleFamilyGroupStatusResponse>()

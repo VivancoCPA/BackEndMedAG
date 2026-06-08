@@ -22,5 +22,9 @@
     {
         "id": "SOBRINO_A",
         "label": "Sobrino/a"
+    },
+    {
+        "id": "TIO_A",
+        "label": "Tio/a"
     }
 ]

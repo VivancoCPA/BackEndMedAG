@@ -23,6 +23,7 @@ public class AppDbContext : IdentityDbContext<AppUser, ApplicationRole, string>
     public DbSet<UserInsurance> UserInsurances => Set<UserInsurance>();
     public DbSet<FamilyMembership> FamilyMemberships => Set<FamilyMembership>();
     public DbSet<FamilyExtraMembership> FamilyExtraMemberships => Set<FamilyExtraMembership>();
+    public DbSet<UserScope> UserScopes => Set<UserScope>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -244,6 +245,29 @@ public class AppDbContext : IdentityDbContext<AppUser, ApplicationRole, string>
                   .WithMany()
                   .HasForeignKey(e => e.CenterId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── UserScope ───────────────────────────────────────
+        modelBuilder.Entity<UserScope>(entity =>
+        {
+            entity.ToTable("user_scope");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserIdAdmin).HasColumnName("user_id_admin").IsRequired();
+            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+
+            // FK: UserScope → AspNetUsers.Id (admin)
+            entity.HasOne(e => e.UserAdmin)//
+                  .WithMany()
+                  .HasForeignKey(e => e.UserIdAdmin)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+            // FK: UserScope → AspNetUsers.Id (user)
+            entity.HasOne(e => e.User)  
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
     }
 
