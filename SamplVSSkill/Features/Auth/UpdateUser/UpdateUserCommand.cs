@@ -9,6 +9,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Dapper;
+using SamplVSSkill.Infrastructure.Persistence;
+
 namespace SamplVSSkill.Features.Auth.UpdateUser;
 
 // ── Request / Response ──────────────────────────────────────────
@@ -51,15 +54,36 @@ public class UpdateUserCommandHandler
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly DapperConnectionFactory _connectionFactory;
 
-    public UpdateUserCommandHandler(UserManager<AppUser> userManager, IWebHostEnvironment webHostEnvironment)
+    public UpdateUserCommandHandler(
+        UserManager<AppUser> userManager,
+        IWebHostEnvironment webHostEnvironment,
+        DapperConnectionFactory connectionFactory)
     {
         _userManager = userManager;
         _webHostEnvironment = webHostEnvironment;
+        _connectionFactory = connectionFactory;
     }
 
-    public async Task<IResult> HandleAsync(string userId, UpdateUserCommand command, CancellationToken ct)
+    public async Task<IResult> HandleAsync(
+        string userId, UpdateUserCommand command, string currentUserId, bool bypassScope, CancellationToken ct)
     {
+        if (!bypassScope && userId != currentUserId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            var inScope = await connection.ExecuteScalarAsync<bool>(
+                new CommandDefinition(
+                    "SELECT EXISTS(SELECT 1 FROM user_scope WHERE user_id_admin = @CurrentUserId AND user_id = @UserId)",
+                    new { CurrentUserId = currentUserId, UserId = userId },
+                    cancellationToken: ct));
+
+            if (!inScope)
+            {
+                return Results.Forbid();
+            }
+        }
+
         var user = await _userManager.FindByIdAsync(userId);
         if (user is null)
             return Results.NotFound($"Usuario '{userId}' no encontrado.");

@@ -78,11 +78,12 @@ public class RefreshTokenCommandHandler
         }
 
         // Generar nuevos tokens (Rotación)
-        var newAccessToken = _jwtService.GenerateToken(user);
+        var roles = await _userManager.GetRolesAsync(user);
+        var newAccessToken = _jwtService.GenerateToken(user, roles);
         var newRefreshToken = _jwtService.GenerateRefreshToken();
 
         user.RefreshToken = newRefreshToken;
-        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(_jwtService.RefreshTokenExpirationDays);
         await _userManager.UpdateAsync(user);
 
         return Results.Ok(new RefreshTokenResponse(newAccessToken, newRefreshToken));

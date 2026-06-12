@@ -56,11 +56,12 @@ public class LoginCommandHandler
                 statusCode: StatusCodes.Status403Forbidden);
         }
 
-        var token = _jwtService.GenerateToken(user);
+        var roles = await _userManager.GetRolesAsync(user);
+        var token = _jwtService.GenerateToken(user, roles);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
         user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(_jwtService.RefreshTokenExpirationDays);
         user.LastAccess = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 

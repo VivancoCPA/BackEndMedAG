@@ -141,18 +141,42 @@ FROM doctors WHERE id = @Id
 | `dotnet ef migrations add InitialCreate` | ✅ Migración generada |
 | Tablas `doctors` y `medical_centers` en migración | ✅ Snake_case correcto |
 | Tablas ASP.NET Identity en migración | ✅ Incluidas |
+| Integración de `UserScope` en consultas/comandos | ✅ Completada y compilada exitosamente |
+
+---
+
+## Integración de UserScope (Ámbito de Usuario)
+
+Se ha integrado el concepto de **`UserScope`** en el módulo de usuarios (`Auth`) para permitir la segmentación y protección de la información según el ámbito asignado a cada `Admin`.
+
+### 1. Filtrado de Consultas por Scope (Dapper)
+- **`ListUsers`** (`GET /api/users`): Filtra dinámicamente los registros de usuarios y sus aseguradoras asociadas si el usuario solicitante es un `Admin` estándar. Evade el filtro (bypass) si es `SuperAdmin`.
+- **`PagedUsers`** (`GET /api/auth/users/paged`): Se modificó la consulta paginada en Dapper para inyectar y evaluar el filtro por `user_scope` de forma optimizada sobre la consulta principal y de conteo.
+
+### 2. Validación y Seguridad de Ámbito (UserManager + Dapper)
+Se inyectó verificación de ámbito en las siguientes operaciones individuales (retorna `403 Forbidden` si el usuario no pertenece al scope del administrador y no es el propio usuario operándose a sí mismo):
+- **`GetUser`** (`GET /api/users/{userId}`)
+- **`UpdateUser`** (`PUT /api/auth/users/{userId}`)
+- **`ToggleUserStatus`** (`PATCH /api/users/{userId}/toggle-status`)
+
+### 3. Creación y Asociación Automática
+- **`CreateUser`** (`POST /api/auth/users`): Cuando un `Admin` crea un nuevo usuario, el handler registra de forma atómica una nueva relación en la tabla `user_scope` asociando al nuevo usuario al scope de su creador.
+
+### 4. Nuevas Funcionalidades (Slices VSA)
+Se agregaron tres nuevos casos de uso independientes para administrar manualmente los scopes:
+- **`AddUserScope`** (`POST /api/users/{adminId}/scope/{userId}`): Asocia un usuario al scope de un admin.
+- **`RemoveUserScope`** (`DELETE /api/users/{adminId}/scope/{userId}`): Elimina la asociación del scope.
+- **`ListUserScopes`** (`GET /api/users/{adminId}/scopes`): Recupera e informa los usuarios asignados al ámbito de un admin específico.
 
 ---
 
 ## Próximos Pasos
 
-1. **Aplicar migración a PostgreSQL**:
+1. **Ejecutar la base de datos y migraciones**:
    ```bash
    dotnet ef database update --project SamplVSSkill/SamplVSSkill.csproj
    ```
 
-2. **Agregar más entidades** del modelo (`users`, `pets`, `medical_incidents`, etc.) siguiendo el mismo patrón VSA.
+2. **Pruebas de Integración y de Roles**:
+   Verificar el correcto rechazo con `403 Forbidden` al loguearse como un `Admin` de prueba e intentar obtener la información de un usuario registrado por otro administrador.
 
-3. **Autenticación JWT** — agregar slice `Login` / `Register` usando Identity.
-
-4. **Swagger UI** — agregar `Swashbuckle` o usar el OpenAPI Explorer integrado en .NET 10.

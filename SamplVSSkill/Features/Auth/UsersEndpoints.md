@@ -35,6 +35,11 @@ Se excluyen explícitamente los endpoints de gestión de roles que no operan sob
   - [Solicitud de Recuperación de Contraseña (`POST /api/auth/forgot-password`)](#solicitud-de-recuperación-de-contraseña-post-apiauthforgot-password)
   - [Restablecer Contraseña (`POST /api/auth/reset-password`)](#restablecer-contraseña-post-apiauthreset-password)
   - [Renovación de Token / Refresh Token (`POST /api/auth/refresh`)](#renovación-de-token--refresh-token-post-apiauthrefresh)
+- [5. Gestión de Ámbitos de Usuario (UserScope - Tag: `Users`)](#5-gestión-de-ámbitos-de-usuario-userscope---tag-users)
+  - [Asignar Usuario a un Ámbito (`POST /api/users/{adminId}/scope/{userId}`)](#asignar-usuario-a-un-ámbito-post-apiusersadminidscopeuserid)
+  - [Remover Usuario de un Ámbito (`DELETE /api/users/{adminId}/scope/{userId}`)](#remover-usuario-de-un-ámbito-delete-apiusersadminidscopeuserid)
+  - [Listar Usuarios en el Ámbito de un Administrador (`GET /api/users/{adminId}/scopes`)](#listar-usuarios-en-el-ámbito-de-un-administrador-get-apiusersadminidscopes)
+  - [Listar Usuarios sin Ámbito Asociado (`GET /api/users/unscoped`)](#listar-usuarios-sin-ámbito-asociado-get-apiusersunscoped)
 
 ---
 
@@ -44,7 +49,7 @@ Se excluyen explícitamente los endpoints de gestión de roles que no operan sob
 
 *   **Ruta:** `GET /api/users/{userId}`
 *   **Nombre de Acción:** `GetUser`
-*   **Autorización:** Requerido (`.RequireAuthorization()`)
+*   **Autorización:** Requerido (`.RequireAuthorization()`). Permite el acceso a roles `SuperAdmin`, `Admin` (si el usuario está dentro de su scope) o al propio usuario solicitante.
 *   **Parámetros de Ruta:**
     *   `userId` (string, Requerido): ID único del usuario a consultar.
 
@@ -63,6 +68,7 @@ Devuelve un objeto `GetUserResponse` con la información detallada del perfil:
   "lockoutEnd": null,
   "passwordConfirmed": true,
   "lastAccess": "2026-06-01T09:46:00Z",
+  "photoUrl": "string",
   "roles": ["string"],
   "claims": ["TipoClaim:ValorClaim"]
 }
@@ -70,6 +76,7 @@ Devuelve un objeto `GetUserResponse` con la información detallada del perfil:
 
 #### Otras Respuestas
 *   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: El solicitante no posee el rol `SuperAdmin` o `Admin` (y el usuario consultado está fuera de su scope), o un usuario regular intenta consultar los datos de otro usuario.
 *   **`404 Not Found`**: No se encuentra un usuario con el `userId` provisto.
 
 ---
@@ -78,10 +85,14 @@ Devuelve un objeto `GetUserResponse` con la información detallada del perfil:
 
 *   **Ruta:** `GET /api/users`
 *   **Nombre de Acción:** `ListUsers`
-*   **Autorización:** Ninguna (Comentada en el mapeo del endpoint).
+*   **Autorización:** Requerido (`.RequireAuthorization()`). Acceso restringido a los roles `SuperAdmin` o `Admin`.
+
+#### Comportamiento
+*   Si el usuario solicitante tiene rol `Admin` estándar (no SuperAdmin), los resultados se filtran automáticamente mediante Dapper usando la tabla `user_scope`, retornando solo aquellos usuarios dentro de su ámbito.
+*   Si el solicitante tiene rol `SuperAdmin`, se omite el filtrado de ámbito y se retornan todos los usuarios de la plataforma.
 
 #### Respuesta Exitosa (`200 OK`)
-Retorna una lista `IEnumerable<ListUsersResponse>` con todos los usuarios registrados y su grupo familiar/aseguradoras asociadas (enfoque optimizado mediante Dapper en 2 consultas):
+Retorna una lista `IEnumerable<ListUsersResponse>` con los usuarios asociados y su grupo familiar/aseguradoras (enfoque optimizado mediante Dapper en 2 consultas):
 
 ```json
 [
@@ -98,8 +109,6 @@ Retorna una lista `IEnumerable<ListUsersResponse>` con todos los usuarios regist
     "isLockedOut": false,
     "lastAccess": "2026-06-01T09:46:00Z",
     "passwordConfirmed": true,
-    "familyGroupId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "familyGroupName": "string",
     "insurances": [
       {
         "insurerId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -113,19 +122,30 @@ Retorna una lista `IEnumerable<ListUsersResponse>` con todos los usuarios regist
 ]
 ```
 
+#### Otras Respuestas
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: El usuario no posee los roles requeridos para listar usuarios.
+```
+
 ---
 
 ### Listar Usuarios Paginados (`GET /api/auth/users/paged`)
 
 *   **Ruta:** `GET /api/auth/users/paged`
 *   **Nombre de Acción:** `PagedUsers`
-*   **Autorización:** Ninguna (Comentada en el mapeo del endpoint).
+*   **Autorización:** Requerido (`.RequireAuthorization()`). Acceso restringido a los roles `SuperAdmin` o `Admin`.
 *   **Parámetros de Consulta (Query Params):**
     *   `page` (int, opcional, por defecto `1`): Número de página a consultar.
     *   `pageSize` (int, opcional, por defecto `10`): Cantidad máxima de registros por página (Min: 1, Max: 100).
-    *   `search` (string, opcional, por defecto `null`): Filtra por coincidencia parcial (ILIKE) en los campos: Email, Nombre, Apellido o Nombre de Grupo Familiar.
+    *   `search` (string, opcional, por defecto `null`): Filtra por coincidencia parcial (ILIKE) en los campos: Email, Nombre o Apellido.
+    *   `isLockedOut` (bool?, opcional, por defecto `null`): Filtra por estado de bloqueo (true: solo bloqueados, false: solo no bloqueados, null: todos).
+    *   `isActive` (bool?, opcional, por defecto `null`): Filtra por estado activo/inactivo (true: no bloqueados, false: bloqueados, null: todos).
     *   `sortBy` (string, opcional, por defecto `"name"`): Campo por el que ordenar. Opciones admitidas: `"name"`, `"lastname"`, `"email"`, `"emailconfirmed"`, `"createdat"`.
     *   `sortDesc` (bool, opcional, por defecto `false`): Si se establece en `true` ordena de manera descendente.
+
+#### Comportamiento
+*   Si el usuario solicitante tiene rol `Admin` estándar (no SuperAdmin), la paginación filtra automáticamente aplicando el ámbito de la tabla `user_scope` a nivel de consulta principal y de conteo.
+*   Si posee rol `SuperAdmin`, se lista todo sin filtrar por ámbito.
 
 #### Respuesta Exitosa (`200 OK`)
 Retorna un objeto `PaginatedResult<PagedUserItem>` que incluye metadatos de la paginación:
@@ -147,8 +167,6 @@ Retorna un objeto `PaginatedResult<PagedUserItem>` que incluye metadatos de la p
       "createdAt": "2026-05-22T18:24:27Z",
       "lastAccess": "2026-06-01T09:46:00Z",
       "passwordConfirmed": true,
-      "familyGroupId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "familyGroupName": "string",
       "insurances": [
         {
           "insurerId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -169,13 +187,17 @@ Retorna un objeto `PaginatedResult<PagedUserItem>` que incluye metadatos de la p
 }
 ```
 
+#### Otras Respuestas
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: El usuario no posee los roles requeridos para listar usuarios paginados.
+
 ---
 
 ### Actualizar Información de Usuario (`PUT /api/auth/users/{id}`)
 
 *   **Ruta:** `PUT /api/auth/users/{id}`
 *   **Nombre de Acción:** `UpdateUser`
-*   **Autorización:** Ninguna (Comentada en el mapeo del endpoint).
+*   **Autorización:** Requerido (`.RequireAuthorization()`). Acceso para `SuperAdmin`, `Admin` (si el usuario objetivo está dentro de su scope) o el propio usuario solicitante.
 *   **Parámetros de Ruta:**
     *   `id` (string, Requerido): ID único del usuario a actualizar.
 
@@ -194,6 +216,7 @@ La petición debe enviarse codificada como formulario (`multipart/form-data`) co
 > Al enviar un formulario con archivos utilizando `FormData`, **NO debes definir manualmente la cabecera `'Content-Type'`** en la petición. El navegador se encargará de inyectar `multipart/form-data` junto con el parámetro `boundary`.
 
 #### Comportamiento
+*   Si la petición es realizada por un `Admin` estándar para modificar a otro usuario, se valida mediante `user_scope` que el usuario pertenezca a su ámbito.
 *   Valida los campos obligatorios del formulario.
 *   Si se proporciona una nueva foto en `photo`:
     *   Primero se guardan los datos textuales y el nuevo path en la base de datos.
@@ -219,6 +242,8 @@ Retorna `UpdateUserResponse` confirmando los cambios realizados:
 
 #### Otras Respuestas
 *   **`400 Bad Request`**: Datos inválidos en el cuerpo (problema de validación).
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: El administrador que realiza la petición no tiene al usuario en su scope, o un usuario regular intenta modificar los datos de otro usuario.
 *   **`404 Not Found`**: El usuario no existe en el sistema.
 *   **`500 Internal Server Error`**: Ocurrió un error físico en el disco al guardar la nueva imagen, resultando en un rollback del registro a su estado anterior.
 
@@ -228,11 +253,12 @@ Retorna `UpdateUserResponse` confirmando los cambios realizados:
 
 *   **Ruta:** `PATCH /api/users/{userId}/toggle-status`
 *   **Nombre de Acción:** `ToggleUserStatus`
-*   **Autorización:** Ninguna (Comentada en el mapeo del endpoint).
+*   **Autorización:** Requerido (`.RequireAuthorization()`). Acceso permitido solo a los roles `SuperAdmin` o `Admin`.
 *   **Parámetros de Ruta:**
     *   `userId` (string, Requerido): ID único del usuario.
 
 #### Comportamiento
+*   Si la petición es realizada por un `Admin` estándar, se valida que el usuario objetivo esté dentro de su ámbito en la tabla `user_scope`.
 *   Si el usuario está bloqueado (`LockoutEnd > UTC Now`), se **desbloquea** limpiando el campo `LockoutEnd` a `null`.
 *   Si el usuario está activo, se **bloquea** asignándole un bloqueo permanente fijando `LockoutEnd` en `DateTimeOffset.MaxValue`.
 
@@ -248,6 +274,8 @@ Retorna `ToggleUserStatusResponse` con el estado final:
 ```
 
 #### Otras Respuestas
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: El administrador que realiza la petición no tiene al usuario en su scope o no posee el rol adecuado.
 *   **`404 Not Found`**: No se encontró al usuario.
 
 ---
@@ -256,7 +284,7 @@ Retorna `ToggleUserStatusResponse` con el estado final:
 
 *   **Ruta:** `POST /api/auth/users`
 *   **Nombre de Acción:** `CreateUser`
-*   **Autorización:** Ninguna (Omitido por desarrollo, se puede proteger con Roles/Admins luego).
+*   **Autorización:** Requerido (`.RequireAuthorization()`). Acceso permitido solo a los roles `SuperAdmin` o `Admin`.
 
 #### Cuerpo de la Solicitud (FormData / `multipart/form-data`)
 La petición debe enviarse codificada como formulario (`multipart/form-data`) con los siguientes campos:
@@ -277,6 +305,7 @@ La petición debe enviarse codificada como formulario (`multipart/form-data`) co
 *   Verifica que el email no esté en uso.
 *   Autogenera una contraseña temporal segura que cumple con las directivas de complejidad de Identity.
 *   **Gestión de Foto de Perfil**: Si se proporciona un archivo de imagen en la propiedad `photo`, se crea recursivamente la carpeta local `wwwroot/uploads/profiles/` en el servidor (si no existe), se le genera un nombre seguro y único usando un GUID para evitar colisiones y path traversal, se escribe físicamente el archivo en disco, y se almacena la ruta de acceso relativa (ej. `/uploads/profiles/a5b6c7d8e9f0...jpg`) en el campo `PhotoUrl` del registro de usuario. Si se produce un error durante la creación definitiva del registro en la base de datos, el archivo cargado se elimina de forma automática y preventiva para evitar almacenamiento basura.
+*   **Registro en Scope**: Al guardarse el usuario correctamente en base de datos, se asocia automáticamente en `user_scope` al administrador creador de la cuenta.
 *   Registra el usuario con `EmailConfirmed = true` (ya confirmado automáticamente por el administrador) y `PasswordConfirmed = false` (indica que debe ser cambiada en el primer ingreso).
 *   Envía un correo de bienvenida al usuario final con sus credenciales y contraseña temporal.
 
@@ -295,6 +324,8 @@ Retorna `CreateUserResponse` con los detalles del usuario creado e incluye la ru
 
 #### Otras Respuestas
 *   **`400 Bad Request`**: Datos inválidos en el formulario enviado (problema de validación).
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: El usuario no posee los roles requeridos para realizar una creación de cuenta.
 *   **`409 Conflict`**: Si el email provisto ya se encuentra registrado.
 
 ---
@@ -806,3 +837,113 @@ Genera un nuevo token de acceso (JWT) y aplica la rotación del Refresh Token, r
 
 #### Otras Respuestas
 *   **`400 Bad Request`**: Si el Access Token o el Refresh Token son nulos o vacíos, si el Access Token es inválido, si el Refresh Token no coincide en base de datos, o si el Refresh Token ha expirado.
+
+---
+
+## 5. Gestión de Ámbitos de Usuario (UserScope - Tag: `Users`)
+
+Estos endpoints permiten gestionar el ámbito (`user_scope`) de los administradores. Los administradores con ámbito limitado sólo pueden visualizar, actualizar y gestionar usuarios que pertenezcan a su respectivo ámbito.
+
+### Asignar Usuario a un Ámbito (`POST /api/users/{adminId}/scope/{userId}`)
+
+*   **Ruta:** `POST /api/users/{adminId}/scope/{userId}`
+*   **Nombre de Acción:** `AddUserScope`
+*   **Autorización:** Requerido (`.RequireAuthorization()`). Permitido a `SuperAdmin` para cualquier administrador, o a un `Admin` estándar sólo para su propio identificador (`adminId == currentUserId`).
+*   **Parámetros de Ruta:**
+    *   `adminId` (string, Requerido): ID único del administrador al que se asignará el usuario.
+    *   `userId` (string, Requerido): ID único del usuario a incorporar en el ámbito.
+
+#### Respuesta Exitosa (`201 Created`)
+Devuelve un objeto `AddUserScopeResponse` confirmando la asignación:
+```json
+{
+  "id": 1,
+  "userIdAdmin": "string",
+  "userId": "string"
+}
+```
+
+#### Otras Respuestas
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: Si el solicitante no es un `SuperAdmin` y busca agregar a un ámbito distinto al suyo, o si no posee permisos administrativos.
+*   **`404 Not Found`**: No se encuentra el administrador o el usuario solicitado.
+*   **`409 Conflict`**: El usuario ya se encuentra registrado dentro de los límites del ámbito del administrador.
+
+---
+
+### Remover Usuario de un Ámbito (`DELETE /api/users/{adminId}/scope/{userId}`)
+
+*   **Ruta:** `DELETE /api/users/{adminId}/scope/{userId}`
+*   **Nombre de Acción:** `RemoveUserScope`
+*   **Autorización:** Requerido (`.RequireAuthorization()`). Permitido a `SuperAdmin` para cualquier administrador, o a un `Admin` estándar sólo para su propio identificador (`adminId == currentUserId`).
+*   **Parámetros de Ruta:**
+    *   `adminId` (string, Requerido): ID único del administrador.
+    *   `userId` (string, Requerido): ID único del usuario a remover del ámbito.
+
+#### Respuesta Exitosa (`200 OK`)
+Devuelve un objeto de confirmación `RemoveUserScopeResponse`:
+```json
+{
+  "message": "Usuario eliminado del ámbito correctamente."
+}
+```
+
+#### Otras Respuestas
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: Si el solicitante no es un `SuperAdmin` y busca remover de un ámbito distinto al suyo, o si no posee permisos administrativos.
+*   **`404 Not Found`**: La relación de ámbito para ese administrador y usuario no existe.
+
+---
+
+### Listar Usuarios en el Ámbito de un Administrador (`GET /api/users/{adminId}/scopes`)
+
+*   **Ruta:** `GET /api/users/{adminId}/scopes`
+*   **Nombre de Acción:** `ListUserScopes`
+*   **Autorización:** Requerido (`.RequireAuthorization()`). Permitido a `SuperAdmin` para cualquier administrador, o a un `Admin` estándar sólo para su propio identificador (`adminId == currentUserId`).
+*   **Parámetros de Ruta:**
+    *   `adminId` (string, Requerido): ID del administrador a consultar.
+
+#### Respuesta Exitosa (`200 OK`)
+Devuelve un listado `IEnumerable<ListUserScopesResponse>` de usuarios asociados al ámbito:
+```json
+[
+  {
+    "id": 1,
+    "userIdAdmin": "string",
+    "userId": "string",
+    "userEmail": "usuario@example.com",
+    "userFullName": "Nombre Apellido"
+  }
+]
+```
+
+#### Otras Respuestas
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: El solicitante no es `SuperAdmin` y trata de consultar el ámbito de otro administrador, o carece de privilegios adecuados.
+
+---
+
+### Listar Usuarios sin Ámbito Asociado (`GET /api/users/unscoped`)
+
+*   **Ruta:** `GET /api/users/unscoped`
+*   **Nombre de Acción:** `ListUnscopedUsers`
+*   **Autorización:** Requerido (`.RequireAuthorization()`). Permitido a los roles `SuperAdmin` y `Admin`.
+*   **Parámetros de Ruta:** Ninguno.
+
+#### Respuesta Exitosa (`200 OK`)
+Devuelve un listado `IEnumerable<ListUnscopedUsersResponse>` de usuarios que no pertenecen a ningún ámbito (no existen registros asociados en la tabla `user_scope`):
+```json
+[
+  {
+    "id": "string",
+    "email": "usuario@example.com",
+    "name": "Nombre",
+    "lastName": "Apellido",
+    "fullName": "Nombre Apellido"
+  }
+]
+```
+
+#### Otras Respuestas
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: El solicitante no posee el rol `SuperAdmin` o `Admin`.

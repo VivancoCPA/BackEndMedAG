@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using SamplVSSkill.Domain.Entities;
+using SamplVSSkill.Infrastructure.Persistence;
 using SamplVSSkill.Infrastructure.Services;
 using System;
 using System.IO;
@@ -18,12 +19,13 @@ public record CreateUserCommand
     public string Email { get; init; } = default!;
     public string Name { get; init; } = default!;
     public string LastName { get; init; } = default!;
+    public string? Address { get; init; } = default!;
     public string? Phone { get; init; }
     public string? DateOfBirth { get; init; } // Recibido como string para evitar fallos de model binding por cultura regional
     public IFormFile? Photo { get; init; }
 }
 
-public record CreateUserResponse(string Id, string Email, string Name, string LastName, string? PhotoUrl, bool PasswordConfirmed);
+public record CreateUserResponse(string Id, string Email, string Name, string LastName, string? Address, string? PhotoUrl, bool PasswordConfirmed);
 
 // ── Validator ───────────────────────────────────────────────────
 public class CreateUserValidator : AbstractValidator<CreateUserCommand>
@@ -54,18 +56,21 @@ public class CreateUserCommandHandler
     private readonly UserManager<AppUser> _userManager;
     private readonly IEmailService _emailService;
     private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly AppDbContext _db;
 
     public CreateUserCommandHandler(
         UserManager<AppUser> userManager,
         IEmailService emailService,
-        IWebHostEnvironment webHostEnvironment)
+        IWebHostEnvironment webHostEnvironment,
+        AppDbContext db)
     {
         _userManager = userManager;
         _emailService = emailService;
         _webHostEnvironment = webHostEnvironment;
+        _db = db;
     }
 
-    public async Task<IResult> HandleAsync(CreateUserCommand command, CancellationToken ct)
+    public async Task<IResult> HandleAsync(CreateUserCommand command, string creatorUserId, bool isCreatorAdmin, CancellationToken ct)
     {
         var existingUser = await _userManager.FindByEmailAsync(command.Email);
         if (existingUser is not null)
@@ -103,6 +108,7 @@ public class CreateUserCommandHandler
             Email = command.Email,
             Name = command.Name,
             LastName = command.LastName,
+            Address = command.Address,
             PhoneNumber = command.Phone,
             DateOfBirth = dateOfBirth,
             PhotoUrl = photoUrl,
@@ -110,24 +116,39 @@ public class CreateUserCommandHandler
             PasswordConfirmed = false // Debe cambiarla al ingresar
         };
 
-        // 2. Intentar guardar el registro del usuario en la base de datos PRIMERO
-        var result = await _userManager.CreateAsync(user, tempPassword);
+        // Iniciar transacción de base de datos para asegurar atomicidad
+        using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
-        if (!result.Succeeded)
+        try
         {
-            var errors = result.Errors
-                .GroupBy(e => e.Code)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(e => e.Description).ToArray()
-                );
-            return Results.ValidationProblem(errors);
-        }
+            // 2. Intentar guardar el registro del usuario en la base de datos
+            var result = await _userManager.CreateAsync(user, tempPassword);
 
-        // 3. Físicamente guardar el archivo localmente SOLAMENTE si la base de datos tuvo éxito
-        if (command.Photo is not null && command.Photo.Length > 0 && uniqueFileName is not null)
-        {
-            try
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors
+                    .GroupBy(e => e.Code)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(e => e.Description).ToArray()
+                    );
+                return Results.ValidationProblem(errors);
+            }
+
+            if (isCreatorAdmin)
+            {
+                // Crear asociación de UserScope para asociar el nuevo usuario al administrador creador
+                var userScope = new UserScope
+                {
+                    UserIdAdmin = creatorUserId,
+                    User = user
+                };
+                _db.UserScopes.Add(userScope);
+                await _db.SaveChangesAsync(ct);
+            }
+
+            // 3. Físicamente guardar el archivo localmente SOLAMENTE si la base de datos tuvo éxito
+            if (command.Photo is not null && command.Photo.Length > 0 && uniqueFileName is not null)
             {
                 var webRootPath = _webHostEnvironment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
                 var uploadsFolder = Path.Combine(webRootPath, "uploads", "profiles");
@@ -145,16 +166,38 @@ public class CreateUserCommandHandler
                     await command.Photo.CopyToAsync(stream, ct);
                 }
             }
-            catch (Exception)
+
+            // Si todo tiene éxito, confirmamos la transacción
+            await transaction.CommitAsync(ct);
+        }
+        catch (Exception)
+        {
+            // La transacción hará rollback automáticamente al disponerse si no se llamó a CommitAsync.
+            // Pero llamamos a RollbackAsync explícitamente para mayor claridad.
+            await transaction.RollbackAsync(ct);
+
+            // Si la foto fue guardada físicamente antes de que fallara la base de datos, la eliminamos
+            if (command.Photo is not null && command.Photo.Length > 0 && uniqueFileName is not null)
             {
-                // Si la escritura en el disco local falla físicamente, hacemos un ROLLBACK eliminando el registro del usuario creado
-                await _userManager.DeleteAsync(user);
-                
-                return Results.Problem(
-                    title: "Error al almacenar la foto de perfil",
-                    detail: "El usuario no pudo ser creado debido a un problema físico al intentar guardar su imagen en el servidor.",
-                    statusCode: StatusCodes.Status500InternalServerError);
+                try
+                {
+                    var webRootPath = _webHostEnvironment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                    var filePath = Path.Combine(webRootPath, "uploads", "profiles", uniqueFileName);
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                    }
+                }
+                catch
+                {
+                    // Ignorar errores al intentar borrar la foto huérfana
+                }
             }
+
+            return Results.Problem(
+                title: "Error al crear el usuario",
+                detail: "El usuario no pudo ser creado debido a un problema al registrar sus datos.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
 
         // Enviar correo de bienvenida con la contraseña temporal
@@ -162,7 +205,7 @@ public class CreateUserCommandHandler
 
         return Results.Created(
             $"/api/auth/users",
-            new CreateUserResponse(user.Id, user.Email!, user.Name, user.LastName, user.PhotoUrl, user.PasswordConfirmed));
+            new CreateUserResponse(user.Id, user.Email!, user.Name, user.LastName, user.Address, user.PhotoUrl, user.PasswordConfirmed));
     }
 
     private static string GenerateSecureTemporaryPassword()

@@ -18,6 +18,7 @@ public sealed class JwtTokenService
     private readonly string _audience;
     private readonly byte[] _key;
     private readonly int _expirationMinutes;
+    private readonly int _refreshTokenExpirationDays;
 
     public JwtTokenService(IConfiguration configuration)
     {
@@ -27,9 +28,12 @@ public sealed class JwtTokenService
         _key = Encoding.UTF8.GetBytes(
             jwtSection["Key"] ?? throw new InvalidOperationException("Jwt:Key not configured."));
         _expirationMinutes = int.Parse(jwtSection["ExpirationMinutes"] ?? "60");
+        _refreshTokenExpirationDays = int.Parse(jwtSection["RefreshTokenExpirationDays"] ?? "7");
     }
 
-    public string GenerateToken(AppUser user)
+    public int RefreshTokenExpirationDays => _refreshTokenExpirationDays;
+
+    public string GenerateToken(AppUser user, IEnumerable<string> roles)
     {
         var claims = new List<Claim>
         {
@@ -39,6 +43,11 @@ public sealed class JwtTokenService
             new(JwtRegisteredClaimNames.FamilyName, user.LastName),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim("role", role));
+        }
 
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(_key),

@@ -97,11 +97,12 @@ public class RegisterCommandHandler
             return Results.ValidationProblem(errors);
         }
 
-        var token = _jwtService.GenerateToken(user);
+        var roles = await _userManager.GetRolesAsync(user);
+        var token = _jwtService.GenerateToken(user, roles);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
         user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(_jwtService.RefreshTokenExpirationDays);
         await _userManager.UpdateAsync(user);
 
         return Results.Created("/api/auth/register", new RegisterResponse(token, refreshToken, user.Email!, user.Name, user.LastName));

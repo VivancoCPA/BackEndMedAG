@@ -18,6 +18,10 @@ using SamplVSSkill.Features.Auth.GetUser;
 using SamplVSSkill.Features.Auth.CreateUser;
 using SamplVSSkill.Features.Auth.UpdateUser;
 using SamplVSSkill.Features.Auth.ToggleUserStatus;
+using SamplVSSkill.Features.Auth.AddUserScope;
+using SamplVSSkill.Features.Auth.RemoveUserScope;
+using SamplVSSkill.Features.Auth.ListUserScopes;
+using SamplVSSkill.Features.Auth.ListUnscopedUsers;
 using SamplVSSkill.Features.Auth.AssignClaim;
 using SamplVSSkill.Features.Auth.RemoveClaim;
 using SamplVSSkill.Features.Auth.GetUserClaims;
@@ -120,6 +124,10 @@ public static class EndpointExtensions
         CreateUserEndpoint.Map(app);
         UpdateUserEndpoint.Map(app);
         ToggleUserStatusEndpoint.Map(app);
+        AddUserScopeEndpoint.Map(app);
+        RemoveUserScopeEndpoint.Map(app);
+        ListUserScopesEndpoint.Map(app);
+        ListUnscopedUsersEndpoint.Map(app);
 
         // ── Claims ──
         AssignClaimEndpoint.Map(app);
@@ -244,6 +252,10 @@ public static class EndpointExtensions
         services.AddScoped<CreateUserCommandHandler>();
         services.AddScoped<UpdateUserCommandHandler>();
         services.AddScoped<ToggleUserStatusCommandHandler>();
+        services.AddScoped<AddUserScopeCommandHandler>();
+        services.AddScoped<RemoveUserScopeCommandHandler>();
+        services.AddScoped<ListUserScopesQueryHandler>();
+        services.AddScoped<ListUnscopedUsersQueryHandler>();
 
         // ── Claims ──
         services.AddScoped<AssignClaimCommandHandler>();

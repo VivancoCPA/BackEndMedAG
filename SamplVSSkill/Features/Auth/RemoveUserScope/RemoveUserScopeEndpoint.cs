@@ -1,24 +1,27 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using System.Security.Claims;
 
-namespace SamplVSSkill.Features.Auth.ListUsers;
+namespace SamplVSSkill.Features.Auth.RemoveUserScope;
 
-public static class ListUsersEndpoint
+public static class RemoveUserScopeEndpoint
 {
     public static void Map(IEndpointRouteBuilder app) =>
-        app.MapGet("/api/users", Handle)
+        app.MapDelete("/api/users/{adminId}/scope/{userId}", Handle)
            .WithTags("Users")
-           .WithName("ListUsers")
-           .Produces<IEnumerable<ListUsersResponse>>()
+           .WithName("RemoveUserScope")
+           .Produces<RemoveUserScopeResponse>(StatusCodes.Status200OK)
+           .Produces(StatusCodes.Status404NotFound)
            .Produces(StatusCodes.Status401Unauthorized)
            .Produces(StatusCodes.Status403Forbidden)
            .RequireAuthorization();
 
     private static async Task<IResult> Handle(
         ClaimsPrincipal principal,
-        ListUsersQueryHandler handler,
+        string adminId,
+        string userId,
+        RemoveUserScopeCommandHandler handler,
         CancellationToken ct)
     {
         var currentUserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? principal.FindFirst("sub")?.Value;
@@ -35,7 +38,14 @@ public static class ListUsersEndpoint
             return Results.Forbid();
         }
 
-        var users = await handler.HandleAsync(currentUserId, isSuperAdmin, ct);
-        return Results.Ok(users);
+        // Un Admin estándar solo puede remover usuarios de su PROPIO scope.
+        // Un SuperAdmin puede remover usuarios del scope de CUALQUIER Admin.
+        if (!isSuperAdmin && currentUserId != adminId)
+        {
+            return Results.Forbid();
+        }
+
+        var command = new RemoveUserScopeCommand(adminId, userId);
+        return await handler.HandleAsync(command, ct);
     }
 }

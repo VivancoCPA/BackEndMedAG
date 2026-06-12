@@ -1,5 +1,7 @@
+using Dapper;
 using Microsoft.AspNetCore.Identity;
 using SamplVSSkill.Domain.Entities;
+using SamplVSSkill.Infrastructure.Persistence;
 
 namespace SamplVSSkill.Features.Auth.ToggleUserStatus;
 
@@ -14,12 +16,32 @@ public record ToggleUserStatusResponse(
 public class ToggleUserStatusCommandHandler
 {
     private readonly UserManager<AppUser> _userManager;
+    private readonly DapperConnectionFactory _connectionFactory;
 
-    public ToggleUserStatusCommandHandler(UserManager<AppUser> userManager) =>
-        _userManager = userManager;
-
-    public async Task<IResult> HandleAsync(string userId, CancellationToken ct)
+    public ToggleUserStatusCommandHandler(UserManager<AppUser> userManager, DapperConnectionFactory connectionFactory)
     {
+        _userManager = userManager;
+        _connectionFactory = connectionFactory;
+    }
+
+    public async Task<IResult> HandleAsync(
+        string userId, string currentUserId, bool bypassScope, CancellationToken ct)
+    {
+        if (!bypassScope)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            var inScope = await connection.ExecuteScalarAsync<bool>(
+                new CommandDefinition(
+                    "SELECT EXISTS(SELECT 1 FROM user_scope WHERE user_id_admin = @CurrentUserId AND user_id = @UserId)",
+                    new { CurrentUserId = currentUserId, UserId = userId },
+                    cancellationToken: ct));
+
+            if (!inScope)
+            {
+                return Results.Forbid();
+            }
+        }
+
         var user = await _userManager.FindByIdAsync(userId);
         if (user is null)
             return Results.NotFound($"Usuario '{userId}' no encontrado.");

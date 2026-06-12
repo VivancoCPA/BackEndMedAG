@@ -22,8 +22,6 @@ public record ListUsersResponse(
     bool IsLockedOut,
     DateTime? LastAccess,
     bool PasswordConfirmed,
-    Guid? FamilyGroupId,
-    string? FamilyGroupName,
     IReadOnlyList<UserInsuranceSummary> Insurances);
 
 // ── Private flat row (for initial user query) ──────────────────
@@ -31,8 +29,7 @@ file record ListUserFlat(
     string Id, string Email, string Name, string LastName,
     string? PhoneNumber, DateTime? DateOfBirth, string? PhotoUrl,
     string? Address, bool EmailConfirmed, bool IsLockedOut, DateTime? LastAccess,
-    bool PasswordConfirmed,
-    Guid? FamilyGroupId, string? FamilyGroupName);
+    bool PasswordConfirmed);
 
 // ── Private insurance row ───────────────────────────────────────
 file record InsuranceRow(
@@ -47,10 +44,14 @@ public class ListUsersQueryHandler
     public ListUsersQueryHandler(DapperConnectionFactory connectionFactory) =>
         _connectionFactory = connectionFactory;
 
-    public async Task<IEnumerable<ListUsersResponse>> HandleAsync(CancellationToken ct)
+    public async Task<IEnumerable<ListUsersResponse>> HandleAsync(
+        string currentUserId, bool bypassScope, CancellationToken ct)
     {
-        const string sql = """
-            -- 1) usuarios con grupo familiar
+        var whereClause = bypassScope ? "" : "WHERE u.\"Id\" IN (SELECT user_id FROM user_scope WHERE user_id_admin = @CurrentUserId)";
+        var insuranceFilter = bypassScope ? "" : "WHERE ui.user_id IN (SELECT user_id FROM user_scope WHERE user_id_admin = @CurrentUserId)";
+
+        var sql = $"""
+            -- 1) usuarios
             SELECT u."Id"             AS Id,
                    u."Email"          AS Email,
                    u."Name"           AS Name,
@@ -62,11 +63,9 @@ public class ListUsersQueryHandler
                    u."EmailConfirmed" AS EmailConfirmed,
                    (u."LockoutEnd" IS NOT NULL AND u."LockoutEnd" > NOW()) AS IsLockedOut,
                    u."LastAccess"     AS LastAccess,
-                   u."PasswordConfirmed" AS PasswordConfirmed,
-                   fg.id              AS FamilyGroupId,
-                   fg.name            AS FamilyGroupName
+                   u."PasswordConfirmed" AS PasswordConfirmed
             FROM "AspNetUsers" u
-            LEFT JOIN family_groups fg ON fg.user_id = u."Id"
+            {whereClause}
             ORDER BY u."Name", u."LastName";
 
             -- 2) aseguradoras de todos los usuarios
@@ -77,12 +76,13 @@ public class ListUsersQueryHandler
                    i.email       AS InsurerEmail,
                    i.logo_url    AS LogoUrl
             FROM user_insurances ui
-            INNER JOIN insurers i ON ui.insurer_id = i.id;
+            INNER JOIN insurers i ON ui.insurer_id = i.id
+            {insuranceFilter};
             """;
 
         using var connection = _connectionFactory.CreateConnection();
         using var multi = await connection.QueryMultipleAsync(
-            new CommandDefinition(sql, cancellationToken: ct));
+            new CommandDefinition(sql, new { CurrentUserId = currentUserId }, cancellationToken: ct));
 
         var users      = (await multi.ReadAsync<ListUserFlat>()).ToList();
         var insMap     = (await multi.ReadAsync<InsuranceRow>())
@@ -96,7 +96,6 @@ public class ListUsersQueryHandler
             u.Id, u.Email, u.Name, u.LastName,
             u.PhoneNumber, u.DateOfBirth, u.PhotoUrl, u.Address,
             u.EmailConfirmed, u.IsLockedOut, u.LastAccess, u.PasswordConfirmed,
-            u.FamilyGroupId, u.FamilyGroupName,
             insMap.TryGetValue(u.Id, out var ins) ? ins : Array.Empty<UserInsuranceSummary>()));
     }
 }

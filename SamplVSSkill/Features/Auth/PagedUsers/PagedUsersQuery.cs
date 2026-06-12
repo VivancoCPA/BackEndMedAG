@@ -9,6 +9,8 @@ public record PagedUsersParams(
     int Page = 1,
     int PageSize = 10,
     string? Search = null,
+    bool? IsLockedOut = null,
+    bool? IsActive = null,
     string? SortBy = "name",
     bool SortDesc = false);
 
@@ -32,8 +34,6 @@ public record PagedUserItem(
     DateTime CreatedAt,
     DateTime? LastAccess,
     bool PasswordConfirmed,
-    Guid? FamilyGroupId,
-    string? FamilyGroupName,
     IReadOnlyList<PagedUserInsurance> Insurances);
 
 // ── Private flat row (without Insurances) ──────────────────────
@@ -41,8 +41,7 @@ file record PagedUserFlat(
     string Id, string Email, string Name, string LastName,
     string? PhoneNumber, DateTime? DateOfBirth, string? PhotoUrl,
     string? Address, bool EmailConfirmed, bool IsLockedOut,
-    DateTime CreatedAt, DateTime? LastAccess, bool PasswordConfirmed,
-    Guid? FamilyGroupId, string? FamilyGroupName);
+    DateTime CreatedAt, DateTime? LastAccess, bool PasswordConfirmed);
 
 // ── Private insurance row ───────────────────────────────────────
 file record PagedInsuranceRow(
@@ -68,20 +67,19 @@ public class PagedUsersQueryHandler
         _connectionFactory = connectionFactory;
 
     public async Task<PaginatedResult<PagedUserItem>> HandleAsync(
-        PagedUsersParams queryParams, CancellationToken ct)
+        PagedUsersParams queryParams, string currentUserId, bool bypassScope, CancellationToken ct)
     {
         var page     = Math.Max(1, queryParams.Page);
         var pageSize = Math.Clamp(queryParams.PageSize, 1, 100);
         var offset   = (page - 1) * pageSize;
 
-        var parameters = BuildParameters(queryParams, pageSize, offset);
-        var where      = BuildWhereClause(queryParams);
+        var parameters = BuildParameters(queryParams, pageSize, offset, currentUserId);
+        var where      = BuildWhereClause(queryParams, bypassScope);
         var orderBy    = BuildOrderByClause(queryParams);
 
         var countSql = $"""
             SELECT COUNT(*)
             FROM "AspNetUsers" u
-            LEFT JOIN family_groups fg ON fg.user_id = u."Id"
             {where}
             """;
 
@@ -128,30 +126,71 @@ public class PagedUsersQueryHandler
             u.Id, u.Email, u.Name, u.LastName,
             u.PhoneNumber, u.DateOfBirth, u.PhotoUrl, u.Address,
             u.EmailConfirmed, u.IsLockedOut, u.CreatedAt, u.LastAccess, u.PasswordConfirmed,
-            u.FamilyGroupId, u.FamilyGroupName,
             insMap.TryGetValue(u.Id, out var ins) ? ins : Array.Empty<PagedUserInsurance>()));
 
         return new PaginatedResult<PagedUserItem>(items, page, pageSize, totalCount);
     }
 
-    private static DynamicParameters BuildParameters(PagedUsersParams p, int pageSize, int offset)
+    private static DynamicParameters BuildParameters(PagedUsersParams p, int pageSize, int offset, string currentUserId)
     {
         var dp = new DynamicParameters();
         dp.Add("PageSize", pageSize);
         dp.Add("Offset", offset);
+        dp.Add("CurrentUserId", currentUserId);
         if (!string.IsNullOrWhiteSpace(p.Search))
             dp.Add("Search", $"%{p.Search.Trim()}%");
         return dp;
     }
 
-    private static string BuildWhereClause(PagedUsersParams p) =>
-        string.IsNullOrWhiteSpace(p.Search) ? string.Empty
-            : """
-              WHERE u."Email"    ILIKE @Search
-                 OR u."Name"     ILIKE @Search
-                 OR u."LastName" ILIKE @Search
-                 OR fg.name      ILIKE @Search
-              """;
+    private static string BuildWhereClause(PagedUsersParams p, bool bypassScope)
+    {
+        var conditions = new List<string>();
+
+        if (!bypassScope)
+        {
+            conditions.Add("u.\"Id\" IN (SELECT user_id FROM user_scope WHERE user_id_admin = @CurrentUserId)");
+        }
+
+        if (!string.IsNullOrWhiteSpace(p.Search))
+        {
+            conditions.Add("""
+                (u."Email"    ILIKE @Search
+              OR u."Name"     ILIKE @Search
+              OR u."LastName" ILIKE @Search)
+            """);
+        }
+
+        if (p.IsLockedOut.HasValue)
+        {
+            if (p.IsLockedOut.Value)
+            {
+                conditions.Add("(u.\"LockoutEnd\" IS NOT NULL AND u.\"LockoutEnd\" > NOW())");
+            }
+            else
+            {
+                conditions.Add("(u.\"LockoutEnd\" IS NULL OR u.\"LockoutEnd\" <= NOW())");
+            }
+        }
+
+        if (p.IsActive.HasValue)
+        {
+            if (p.IsActive.Value)
+            {
+                conditions.Add("(u.\"LockoutEnd\" IS NULL OR u.\"LockoutEnd\" <= NOW())");
+            }
+            else
+            {
+                conditions.Add("(u.\"LockoutEnd\" IS NOT NULL AND u.\"LockoutEnd\" > NOW())");
+            }
+        }
+
+        if (conditions.Count == 0)
+        {
+            return "";
+        }
+
+        return "WHERE " + string.Join(" AND ", conditions);
+    }
 
     private static string BuildOrderByClause(PagedUsersParams p)
     {
@@ -173,11 +212,8 @@ public class PagedUsersQueryHandler
                (u."LockoutEnd" IS NOT NULL AND u."LockoutEnd" > NOW()) AS IsLockedOut,
                u."CreatedAt"      AS CreatedAt,
                u."LastAccess"     AS LastAccess,
-               u."PasswordConfirmed" AS PasswordConfirmed,
-               fg.id              AS FamilyGroupId,
-               fg.name            AS FamilyGroupName
+               u."PasswordConfirmed" AS PasswordConfirmed
         FROM "AspNetUsers" u
-        LEFT JOIN family_groups fg ON fg.user_id = u."Id"
         {where}
         {orderBy}
         LIMIT @PageSize OFFSET @Offset
