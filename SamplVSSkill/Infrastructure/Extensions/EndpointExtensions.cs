@@ -22,6 +22,7 @@ using SamplVSSkill.Features.Auth.AddUserScope;
 using SamplVSSkill.Features.Auth.RemoveUserScope;
 using SamplVSSkill.Features.Auth.ListUserScopes;
 using SamplVSSkill.Features.Auth.ListUnscopedUsers;
+using SamplVSSkill.Features.Auth.SwitchRole;
 using SamplVSSkill.Features.Auth.AssignClaim;
 using SamplVSSkill.Features.Auth.RemoveClaim;
 using SamplVSSkill.Features.Auth.GetUserClaims;
@@ -104,6 +105,7 @@ public static class EndpointExtensions
         ResetPasswordEndpoint.Map(app);
         ChangePasswordEndpoint.Map(app);
         RefreshTokenEndpoint.Map(app);
+        SwitchRoleEndpoint.Map(app);
 
         // ── Roles ──
         CreateRoleEndpoint.Map(app);
@@ -232,6 +234,7 @@ public static class EndpointExtensions
         services.AddScoped<ForgotPasswordCommandHandler>();
         services.AddScoped<ResetPasswordCommandHandler>();
         services.AddScoped<RefreshTokenCommandHandler>();
+        services.AddScoped<SwitchRoleCommandHandler>();
 
         // ── Roles ──
         services.AddScoped<CreateRoleCommandHandler>();

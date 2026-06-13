@@ -3,12 +3,17 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using SamplVSSkill.Domain.Entities;
 using SamplVSSkill.Infrastructure.Auth;
+using SamplVSSkill.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SamplVSSkill.Features.Auth.Login;
 
 // ── Request / Response ──────────────────────────────────────────
 public record LoginCommand(string Email, string Password);
-public record LoginResponse(string Token, string RefreshToken, string Email, string Name, string LastName, bool PasswordConfirmed);
+public record UserRoleInfo(string Name, string Description);
+public record LoginResponse(string Token, string RefreshToken, string Email, string Name, string LastName, bool PasswordConfirmed, IEnumerable<UserRoleInfo> Roles);
 
 // ── Validator ───────────────────────────────────────────────────
 public class LoginValidator : AbstractValidator<LoginCommand>
@@ -29,11 +34,13 @@ public class LoginCommandHandler
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly JwtTokenService _jwtService;
+    private readonly AppDbContext _db;
 
-    public LoginCommandHandler(UserManager<AppUser> userManager, JwtTokenService jwtService)
+    public LoginCommandHandler(UserManager<AppUser> userManager, JwtTokenService jwtService, AppDbContext db)
     {
         _userManager = userManager;
         _jwtService = jwtService;
+        _db = db;
     }
 
     public async Task<IResult> HandleAsync(LoginCommand command, CancellationToken ct)
@@ -56,8 +63,14 @@ public class LoginCommandHandler
                 statusCode: StatusCodes.Status403Forbidden);
         }
 
-        var roles = await _userManager.GetRolesAsync(user);
-        var token = _jwtService.GenerateToken(user, roles);
+        var rolesInfo = await (from ur in _db.UserRoles
+                               join r in _db.Roles on ur.RoleId equals r.Id
+                               where ur.UserId == user.Id
+                               select new UserRoleInfo(r.Name!, r.Description))
+                              .ToListAsync(ct);
+
+        var roleNames = rolesInfo.Select(r => r.Name).ToList();
+        var token = _jwtService.GenerateToken(user, roleNames);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
         user.RefreshToken = refreshToken;
@@ -65,7 +78,7 @@ public class LoginCommandHandler
         user.LastAccess = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 
-        return Results.Ok(new LoginResponse(token, refreshToken, user.Email!, user.Name, user.LastName, user.PasswordConfirmed));
+        return Results.Ok(new LoginResponse(token, refreshToken, user.Email!, user.Name, user.LastName, user.PasswordConfirmed, rolesInfo));
     }
 }
 

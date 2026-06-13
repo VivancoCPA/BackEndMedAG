@@ -35,6 +35,7 @@ Se excluyen explícitamente los endpoints de gestión de roles que no operan sob
   - [Solicitud de Recuperación de Contraseña (`POST /api/auth/forgot-password`)](#solicitud-de-recuperación-de-contraseña-post-apiauthforgot-password)
   - [Restablecer Contraseña (`POST /api/auth/reset-password`)](#restablecer-contraseña-post-apiauthreset-password)
   - [Renovación de Token / Refresh Token (`POST /api/auth/refresh`)](#renovación-de-token--refresh-token-post-apiauthrefresh)
+  - [Cambio de Rol Activo (`POST /api/auth/switch-role`)](#cambio-de-rol-activo-post-apiauthswitch-role)
 - [5. Gestión de Ámbitos de Usuario (UserScope - Tag: `Users`)](#5-gestión-de-ámbitos-de-usuario-userscope---tag-users)
   - [Asignar Usuario a un Ámbito (`POST /api/users/{adminId}/scope/{userId}`)](#asignar-usuario-a-un-ámbito-post-apiusersadminidscopeuserid)
   - [Remover Usuario de un Ámbito (`DELETE /api/users/{adminId}/scope/{userId}`)](#remover-usuario-de-un-ámbito-delete-apiusersadminidscopeuserid)
@@ -719,7 +720,17 @@ Retorna `LoginResponse` incluyendo el JWT generado y el Refresh Token persistido
   "email": "juan.perez@example.com",
   "name": "Juan",
   "lastName": "Pérez",
-  "passwordConfirmed": true
+  "passwordConfirmed": true,
+  "roles": [
+    {
+      "name": "Admin",
+      "description": "Administrador con acceso completo"
+    },
+    {
+      "name": "User",
+      "description": "Usuario estándar de la aplicación"
+    }
+  ]
 }
 ```
 
@@ -837,6 +848,37 @@ Genera un nuevo token de acceso (JWT) y aplica la rotación del Refresh Token, r
 
 #### Otras Respuestas
 *   **`400 Bad Request`**: Si el Access Token o el Refresh Token son nulos o vacíos, si el Access Token es inválido, si el Refresh Token no coincide en base de datos, o si el Refresh Token ha expirado.
+
+---
+
+### Cambio de Rol Activo (`POST /api/auth/switch-role`)
+
+*   **Ruta:** `POST /api/auth/switch-role`
+*   **Nombre de Acción:** `SwitchRole`
+*   **Autorización:** Requerido (`.RequireAuthorization()`).
+*   **Parámetros de Ruta:** Ninguno.
+
+#### Cuerpo de la Solicitud (Request Body - JSON)
+```json
+{
+  "roleName": "Admin"
+}
+```
+*   **Validaciones:**
+    *   `roleName`: Obligatorio, no vacío.
+
+#### Respuesta Exitosa (`200 OK`)
+Genera y devuelve un nuevo token de acceso (JWT) que contiene únicamente el rol activo seleccionado en sus claims de rol:
+```json
+{
+  "token": "new_access_token_with_active_role_only"
+}
+```
+
+#### Otras Respuestas
+*   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
+*   **`403 Forbidden`**: Si el usuario está bloqueado o si no posee el rol solicitado en su perfil.
+*   **`404 Not Found`**: Si el usuario no existe.
 
 ---
 
