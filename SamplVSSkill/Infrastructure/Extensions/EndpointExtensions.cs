@@ -23,6 +23,7 @@ using SamplVSSkill.Features.Auth.RemoveUserScope;
 using SamplVSSkill.Features.Auth.ListUserScopes;
 using SamplVSSkill.Features.Auth.ListUnscopedUsers;
 using SamplVSSkill.Features.Auth.SwitchRole;
+using SamplVSSkill.Features.Auth.Logout;
 using SamplVSSkill.Features.Auth.AssignClaim;
 using SamplVSSkill.Features.Auth.RemoveClaim;
 using SamplVSSkill.Features.Auth.GetUserClaims;
@@ -87,6 +88,12 @@ using SamplVSSkill.Features.FamilyExtraMemberships.UpdateFamilyExtraMembership;
 using SamplVSSkill.Features.FamilyExtraMemberships.RemoveFamilyExtraMembership;
 using SamplVSSkill.Features.FamilyExtraMemberships.ListFamilyExtraMemberships;
 using SamplVSSkill.Features.FamilyExtraMemberships.ToggleFamilyExtraMembershipStatus;
+using SamplVSSkill.Features.Appointments.ListAppointments;
+using SamplVSSkill.Features.Appointments.PagedAppointments;
+using SamplVSSkill.Features.Appointments.CreateAppointment;
+using SamplVSSkill.Features.Appointments.UpdateAppointment;
+using SamplVSSkill.Features.AppointmentStatuses.ListAppointmentStatuses;
+
 
 namespace SamplVSSkill.Infrastructure.Extensions;
 
@@ -106,6 +113,7 @@ public static class EndpointExtensions
         ChangePasswordEndpoint.Map(app);
         RefreshTokenEndpoint.Map(app);
         SwitchRoleEndpoint.Map(app);
+        LogoutEndpoint.Map(app);
 
         // ── Roles ──
         CreateRoleEndpoint.Map(app);
@@ -219,6 +227,15 @@ public static class EndpointExtensions
         ListFamilyExtraMembershipsEndpoint.Map(app);
         ToggleFamilyExtraMembershipStatusEndpoint.Map(app);
 
+        // ── Appointments ──
+        ListAppointmentsEndpoint.Map(app);
+        PagedAppointmentsEndpoint.Map(app);
+        CreateAppointmentEndpoint.Map(app);
+        UpdateAppointmentEndpoint.Map(app);
+
+        // ── Appointment Statuses ──
+        ListAppointmentStatusesEndpoint.Map(app);
+
         return app;
     }
 
@@ -235,6 +252,7 @@ public static class EndpointExtensions
         services.AddScoped<ResetPasswordCommandHandler>();
         services.AddScoped<RefreshTokenCommandHandler>();
         services.AddScoped<SwitchRoleCommandHandler>();
+        services.AddScoped<LogoutCommandHandler>();
 
         // ── Roles ──
         services.AddScoped<CreateRoleCommandHandler>();
@@ -347,6 +365,15 @@ public static class EndpointExtensions
         services.AddScoped<RemoveFamilyExtraMembershipCommandHandler>();
         services.AddScoped<ListFamilyExtraMembershipsQueryHandler>();
         services.AddScoped<ToggleFamilyExtraMembershipStatusCommandHandler>();
+
+        // ── Appointments ──
+        services.AddScoped<ListAppointmentsQueryHandler>();
+        services.AddScoped<PagedAppointmentsQueryHandler>();
+        services.AddScoped<CreateAppointmentCommandHandler>();
+        services.AddScoped<UpdateAppointmentCommandHandler>();
+
+        // ── Appointment Statuses ──
+        services.AddScoped<ListAppointmentStatusesQueryHandler>();
 
         return services;
     }

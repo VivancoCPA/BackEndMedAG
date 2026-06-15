@@ -24,6 +24,7 @@ public class AppDbContext : IdentityDbContext<AppUser, ApplicationRole, string>
     public DbSet<FamilyMembership> FamilyMemberships => Set<FamilyMembership>();
     public DbSet<FamilyExtraMembership> FamilyExtraMemberships => Set<FamilyExtraMembership>();
     public DbSet<UserScope> UserScopes => Set<UserScope>();
+    public DbSet<AppointmentUser> AppointmentUsers => Set<AppointmentUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -268,6 +269,50 @@ public class AppDbContext : IdentityDbContext<AppUser, ApplicationRole, string>
                   .HasForeignKey(e => e.UserId)
                   .IsRequired(false)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ── AppointmentUser ───────────────────────────────────────
+        modelBuilder.Entity<AppointmentUser>(entity =>
+        {
+            entity.ToTable("appointment_users");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+            entity.Property(e => e.CenterId).HasColumnName("center_id");
+            entity.Property(e => e.DoctorId).HasColumnName("doctor_id");
+            entity.Property(e => e.SpecialtieId).HasColumnName("specialtie_id");
+            entity.Property(e => e.InsurerId).HasColumnName("insurer_id");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.AppointmentDate).HasColumnName("appointment_date");
+            entity.Property(e => e.StatusId).HasColumnName("status_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+
+            // FK: AppointmentUser → AppUser 
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Doctor)
+                  .WithMany()
+                  .HasForeignKey(e => e.DoctorId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.MedicalCenter)
+                  .WithMany()
+                  .HasForeignKey(e => e.CenterId)
+                  .OnDelete(DeleteBehavior.Cascade);      
+            
+            entity.HasOne(e => e.Insurer)
+                  .WithMany()
+                  .HasForeignKey(e => e.InsurerId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Specialty)
+                  .WithMany()
+                  .HasForeignKey(e => e.SpecialtieId)
+                  .OnDelete(DeleteBehavior.Cascade);    
         });
     }
 

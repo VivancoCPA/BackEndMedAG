@@ -1,0 +1,30 @@
+[
+    {
+        "id": "PENDIENTE",
+        "label": "Pendiente"
+    },
+    {
+        "id": "CONFIRMADA",
+        "label": "Confirmada"
+    },
+    {
+        "id": "INASISTENCIA",
+        "label": "Inasistencia"
+    },
+    {
+        "id": "CANCELADA",
+        "label": "Cancelada"
+    },
+    {
+        "id": "REPROGRAMADA",
+        "label": "Reprogramada"
+    },
+    {
+        "id": "ENCONSULTA",
+        "label": "En Consulta"
+    },
+    {
+        "id": "FINALIZADA",
+        "label": "Finalizada"
+    }
+]

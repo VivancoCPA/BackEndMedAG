@@ -135,3 +135,4 @@ C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\Sampl
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\obj\Debug\net10.0\compressed\xty43f442z-{0}-u1p769bzz5-u1p769bzz5.gz
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\SamplVSSkill\bin\Debug\net10.0\Domain\Raw\parentescos.json
 C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\samplvsskill\bin\Debug\net10.0\SamplVSSkill.exe
+C:\Users\ANTONIO\Cursor\Sample\SamplVSSkill\samplvsskill\bin\Debug\net10.0\Domain\Raw\estadoscita.json

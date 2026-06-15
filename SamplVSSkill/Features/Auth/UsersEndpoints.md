@@ -36,6 +36,7 @@ Se excluyen explícitamente los endpoints de gestión de roles que no operan sob
   - [Restablecer Contraseña (`POST /api/auth/reset-password`)](#restablecer-contraseña-post-apiauthreset-password)
   - [Renovación de Token / Refresh Token (`POST /api/auth/refresh`)](#renovación-de-token--refresh-token-post-apiauthrefresh)
   - [Cambio de Rol Activo (`POST /api/auth/switch-role`)](#cambio-de-rol-activo-post-apiauthswitch-role)
+  - [Cierre de Sesión / Logout (`POST /api/auth/logout`)](#cierre-de-sesión--logout-post-apiauthlogout)
 - [5. Gestión de Ámbitos de Usuario (UserScope - Tag: `Users`)](#5-gestión-de-ámbitos-de-usuario-userscope---tag-users)
   - [Asignar Usuario a un Ámbito (`POST /api/users/{adminId}/scope/{userId}`)](#asignar-usuario-a-un-ámbito-post-apiusersadminidscopeuserid)
   - [Remover Usuario de un Ámbito (`DELETE /api/users/{adminId}/scope/{userId}`)](#remover-usuario-de-un-ámbito-delete-apiusersadminidscopeuserid)
@@ -879,6 +880,28 @@ Genera y devuelve un nuevo token de acceso (JWT) que contiene únicamente el rol
 *   **`401 Unauthorized`**: El usuario no ha proporcionado credenciales de autenticación válidas.
 *   **`403 Forbidden`**: Si el usuario está bloqueado o si no posee el rol solicitado en su perfil.
 *   **`404 Not Found`**: Si el usuario no existe.
+
+---
+
+### Cierre de Sesión / Logout (`POST /api/auth/logout`)
+
+*   **Ruta:** `POST /api/auth/logout`
+*   **Nombre de Acción:** `Logout`
+*   **Autorización:** Requerido (`.RequireAuthorization()`).
+*   **Parámetros de Ruta:** Ninguno.
+*   **Cuerpo de la Solicitud:** Ninguno (vacío).
+
+#### Respuesta Exitosa (`200 OK`)
+Invalida la sesión actual en el backend limpiando el Refresh Token del usuario de la base de datos:
+```json
+{
+  "message": "Sesión cerrada correctamente."
+}
+```
+
+#### Otras Respuestas
+*   **`401 Unauthorized`**: El usuario no está autenticado.
+*   **`404 Not Found`**: Si el usuario no existe en la base de datos.
 
 ---
 

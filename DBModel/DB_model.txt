@@ -1,3 +1,4 @@
+// --- dbdiagram.io ---
 // --- Identidad y Estructura Familiar ---
 
 Table family_groups {
@@ -201,3 +202,17 @@ Table user_scope {
   user_id_admin text [ref: > AspNetUsers.Id]
   user_id text [ref: > AspNetUsers.Id]
 }
+
+Table user_appointments{
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id text [ref: > AspNetUsers.Id]
+  appointment_date timestamptz
+  center_id uuid [ref: > medical_centers.id]
+  doctor_id uuid [ref:> doctors.id]
+  specialtie_id serial [ref:> specialties.id]
+  insurer_id uuid [ref:> insurers.id]
+  description text
+  status_id text
+  createdAt timestamp [default: `now()`]
+}
+
